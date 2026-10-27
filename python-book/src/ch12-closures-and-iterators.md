@@ -1,52 +1,54 @@
-## Rust Closures vs Python Lambdas
+<a id="rust-closures-vs-python-lambdas"></a>
 
-> **What you'll learn:** Multi-line closures (not just one-expression lambdas), `Fn`/`FnMut`/`FnOnce` capture semantics,
-> iterator chains vs list comprehensions, `map`/`filter`/`fold`, and `macro_rules!` basics.
+## RustのクロージャとPythonのラムダ式
+
+> **学習内容:** 1つの式に限らない複数行クロージャ、`Fn`/`FnMut`/`FnOnce`のキャプチャ意味論、
+> イテレーターチェーンとリスト内包表記の比較、`map`/`filter`/`fold`、`macro_rules!`の基礎。
 >
-> **Difficulty:** 🟡 Intermediate
+> **難易度:** 🟡 中級
 
-### Python Closures and Lambdas
+### Pythonのクロージャとラムダ式
 ```python
-# Python — lambdas are one-expression anonymous functions
+# Python — ラムダ式は1つの式からなる無名関数
 double = lambda x: x * 2
 result = double(5)  # 10
 
-# Full closures capture variables from enclosing scope:
+# クロージャは外側のスコープにある変数をキャプチャする：
 def make_adder(n):
     def adder(x):
-        return x + n    # Captures `n` from outer scope
+        return x + n    # 外側のスコープから`n`をキャプチャ
     return adder
 
 add_5 = make_adder(5)
 print(add_5(10))  # 15
 
-# Higher-order functions:
+# 高階関数：
 numbers = [1, 2, 3, 4, 5]
 doubled = list(map(lambda x: x * 2, numbers))
 evens = list(filter(lambda x: x % 2 == 0, numbers))
 ```
 
-### Rust Closures
+### Rustのクロージャ
 ```rust
-// Rust — closures use |args| body syntax
+// Rust — クロージャは|引数| 本体という構文
 let double = |x: i32| x * 2;
 let result = double(5);  // 10
 
-// Closures capture variables from enclosing scope:
+// クロージャは外側のスコープにある変数をキャプチャする：
 fn make_adder(n: i32) -> impl Fn(i32) -> i32 {
-    move |x| x + n    // `move` transfers ownership of `n` into the closure
+    move |x| x + n    // `move`で`n`の所有権をクロージャに移す
 }
 
 let add_5 = make_adder(5);
 println!("{}", add_5(10));  // 15
 
-// Higher-order functions with iterators:
+// イテレーターを使った高階関数：
 let numbers = vec![1, 2, 3, 4, 5];
 let doubled: Vec<i32> = numbers.iter().map(|x| x * 2).collect();
 let evens: Vec<i32> = numbers.iter().filter(|&&x| x % 2 == 0).copied().collect();
 ```
 
-### Closure Syntax Comparison
+### クロージャ構文の比較
 ```text
 Python:                              Rust:
 ─────────                            ─────
@@ -54,26 +56,26 @@ lambda x: x * 2                      |x| x * 2
 lambda x, y: x + y                   |x, y| x + y
 lambda: 42                           || 42
 
-# Multi-line
+# 複数行
 def f(x):                            |x| {
     y = x * 2                            let y = x * 2;
     return y + 1                         y + 1
                                       }
 ```
 
-### Closure Capture — How Rust Differs
+### クロージャのキャプチャ — Rustとの違い
 ```python
-# Python — closures capture by reference (late binding!)
+# Python — クロージャは参照でキャプチャする（遅延束縛！）
 funcs = [lambda: i for i in range(3)]
-print([f() for f in funcs])  # [2, 2, 2] — surprise! All captured the same `i`
+print([f() for f in funcs])  # [2, 2, 2] — なんと、すべて同じ`i`をキャプチャしている
 
-# Fix with default arg trick:
+# デフォルト引数を使った回避策：
 funcs = [lambda i=i: i for i in range(3)]
 print([f() for f in funcs])  # [0, 1, 2]
 ```
 
 ```rust
-// Rust — closures capture correctly (no late-binding gotcha)
+// Rust — クロージャは正しくキャプチャする（遅延束縛の落とし穴はない）
 let funcs: Vec<Box<dyn Fn() -> i32>> = (0..3)
     .map(|i| Box::new(move || i) as Box<dyn Fn() -> i32>)
     .collect();
@@ -81,51 +83,51 @@ let funcs: Vec<Box<dyn Fn() -> i32>> = (0..3)
 let results: Vec<i32> = funcs.iter().map(|f| f()).collect();
 println!("{:?}", results);  // [0, 1, 2] — correct!
 
-// `move` captures a COPY of `i` for each closure — no late-binding surprise.
+// `move`は各クロージャに`i`のコピーをキャプチャする — 遅延束縛の意外な挙動はない。
 ```
 
-### Three Closure Traits
+### 3つのクロージャトレイト
 ```rust
-// Rust closures implement one or more of these traits:
+// Rustのクロージャは、次のトレイトを1つ以上実装する：
 
-// Fn — can be called multiple times, doesn't mutate captures (most common)
+// Fn — 複数回呼び出せ、キャプチャした値を変更しない（最も一般的）
 fn apply(f: impl Fn(i32) -> i32, x: i32) -> i32 { f(x) }
 
-// FnMut — can be called multiple times, MAY mutate captures
+// FnMut — 複数回呼び出せ、キャプチャした値を変更する場合がある
 fn apply_mut(mut f: impl FnMut(i32) -> i32, x: i32) -> i32 { f(x) }
 
-// FnOnce — can only be called ONCE (consumes captures)
+// FnOnce — 1回だけ呼び出せる（キャプチャした値を消費する）
 fn apply_once(f: impl FnOnce() -> String) -> String { f() }
 
-// Python has no equivalent — closures are always Fn-like.
-// In Rust, the compiler automatically determines which trait to use.
+// Pythonに相当する仕組みはなく、クロージャは常にFnのように振る舞う。
+// Rustではコンパイラーがどのトレイトに該当するかを自動判定する。
 ```
 
 ***
 
-## Iterators vs Generators
+## イテレーターとジェネレーター
 
-### Python Generators
+### Pythonのジェネレーター
 ```python
-# Python — generators with yield
+# Python — yieldを使うジェネレーター
 def fibonacci():
     a, b = 0, 1
     while True:
         yield a
         a, b = b, a + b
 
-# Lazy — values computed on demand
+# 遅延評価 — 必要になったときに値を計算
 fib = fibonacci()
 first_10 = [next(fib) for _ in range(10)]
 
-# Generator expressions — like lazy list comprehensions
+# ジェネレーター式 — 遅延評価されるリスト内包表記に似ている
 squares = (x ** 2 for x in range(1000000))  # No memory allocation
 first_5 = [next(squares) for _ in range(5)]
 ```
 
-### Rust Iterators
+### Rustのイテレーター
 ```rust
-// Rust — Iterator trait (similar concept, different syntax)
+// Rust — Iteratorトレイト（概念は似ているが構文は異なる）
 struct Fibonacci {
     a: u64,
     b: u64,
@@ -148,22 +150,22 @@ impl Iterator for Fibonacci {
     }
 }
 
-// Lazy — values computed on demand (just like Python generators)
+// 遅延評価 — 必要になったときに値を計算（Pythonのジェネレーターと同様）
 let first_10: Vec<u64> = Fibonacci::new().take(10).collect();
 
-// Iterator chains — like generator expressions
+// イテレーターチェーン — ジェネレーター式に相当
 let squares: Vec<u64> = (0..1_000_000u64).map(|x| x * x).take(5).collect();
 ```
 
 ***
 
-## Comprehensions vs Iterator Chains
+## 内包表記とイテレーターチェーン
 
-This section maps Python's comprehension syntax to Rust's iterator chains.
+この節では、Pythonの内包表記をRustのイテレーターチェーンに対応付けます。
 
-### List Comprehension → map/filter/collect
+### リスト内包表記 → map/filter/collect
 ```python
-# Python comprehensions:
+# Pythonの内包表記：
 squares = [x ** 2 for x in range(10)]
 evens = [x for x in range(20) if x % 2 == 0]
 names = [user.name for user in users if user.active]
@@ -173,7 +175,7 @@ flat = [item for sublist in nested for item in sublist]
 
 ```mermaid
 flowchart LR
-    A["Source<br/>[1,2,3,4,5]"] -->|".iter()"| B["Iterator"]
+    A["入力<br/>[1,2,3,4,5]"] -->|".iter()"| B["イテレーター"]
     B -->|".filter(x: x%2==0)"| C["[2, 4]"]
     C -->|".map(x: x*x)"| D["[4, 16]"]
     D -->|".collect()"| E["Vec&lt;i32&gt;<br/>[4, 16]"]
@@ -181,10 +183,10 @@ flowchart LR
     style E fill:#d4edda
 ```
 
-> **Key insight**: Rust iterators are lazy — nothing happens until `.collect()`. Python's generators work similarly, but list comprehensions evaluate eagerly.
+> **重要なポイント**：Rustのイテレーターは遅延評価され、`.collect()`するまで何も実行されません。Pythonのジェネレーターも同様ですが、リスト内包表記は即時評価されます。
 
 ```rust
-// Rust iterator chains:
+// Rustのイテレーターチェーン：
 let squares: Vec<i32> = (0..10).map(|x| x * x).collect();
 let evens: Vec<i32> = (0..20).filter(|x| x % 2 == 0).collect();
 let names: Vec<&str> = users.iter()
@@ -199,7 +201,7 @@ let flat: Vec<i32> = nested.iter()
     .collect();
 ```
 
-### Dict Comprehension → collect into HashMap
+### 辞書内包表記 → HashMapへのcollect
 ```python
 # Python
 word_lengths = {word: len(word) for word in words}
@@ -216,7 +218,7 @@ let inverted: HashMap<&V, &K> = mapping.iter()
     .collect();
 ```
 
-### Set Comprehension → collect into HashSet
+### 集合内包表記 → HashSetへのcollect
 ```python
 # Python
 unique_lengths = {len(word) for word in words}
@@ -229,60 +231,60 @@ let unique_lengths: HashSet<usize> = words.iter()
     .collect();
 ```
 
-### Common Iterator Methods
+### よく使うイテレーターメソッド
 
-| Python | Rust | Notes |
+| Python | Rust | 備考 |
 |--------|------|-------|
-| `map(f, iter)` | `.map(f)` | Transform each element |
-| `filter(f, iter)` | `.filter(f)` | Keep matching elements |
-| `sum(iter)` | `.sum()` | Sum all elements |
-| `min(iter)` / `max(iter)` | `.min()` / `.max()` | Returns `Option` |
-| `any(f(x) for x in iter)` | `.any(f)` | True if any match |
-| `all(f(x) for x in iter)` | `.all(f)` | True if all match |
-| `enumerate(iter)` | `.enumerate()` | Index + value |
-| `zip(a, b)` | `a.zip(b)` | Pair elements |
-| `len(list)` | `.count()` (consumes!) or `.len()` | Count elements |
-| `list(reversed(x))` | `.rev()` | Reverse iteration |
-| `itertools.chain(a, b)` | `a.chain(b)` | Concatenate iterators |
-| `next(iter)` | `.next()` | Get next element |
-| `next(iter, default)` | `.next().unwrap_or(default)` | With default |
-| `list(iter)` | `.collect::<Vec<_>>()` | Materialize into collection |
-| `sorted(iter)` | Collect, then `.sort()` | No lazy sorted iterator |
-| `functools.reduce(f, iter)` | `.fold(init, f)` or `.reduce(f)` | Accumulate |
+| `map(f, iter)` | `.map(f)` | 各要素を変換 |
+| `filter(f, iter)` | `.filter(f)` | 条件に合う要素を残す |
+| `sum(iter)` | `.sum()` | すべての要素を合計 |
+| `min(iter)` / `max(iter)` | `.min()` / `.max()` | `Option`を返す |
+| `any(f(x) for x in iter)` | `.any(f)` | 1つでも一致すればtrue |
+| `all(f(x) for x in iter)` | `.all(f)` | すべて一致すればtrue |
+| `enumerate(iter)` | `.enumerate()` | インデックスと値 |
+| `zip(a, b)` | `a.zip(b)` | 要素をペアにする |
+| `len(list)` | `.count()`（消費する！）または`.len()` | 要素数を数える |
+| `list(reversed(x))` | `.rev()` | 逆順に反復 |
+| `itertools.chain(a, b)` | `a.chain(b)` | イテレーターを連結 |
+| `next(iter)` | `.next()` | 次の要素を取得 |
+| `next(iter, default)` | `.next().unwrap_or(default)` | デフォルト値を指定 |
+| `list(iter)` | `.collect::<Vec<_>>()` | コレクションとして具体化 |
+| `sorted(iter)` | collectしてから`.sort()` | 遅延ソートイテレーターはない |
+| `functools.reduce(f, iter)` | `.fold(init, f)`または`.reduce(f)` | 値を累積 |
 
-### Key Differences
+### 主な違い
 ```text
-Python iterators:                     Rust iterators:
+Pythonのイテレーター：                 Rustのイテレーター：
 ─────────────────                     ──────────────
-- Lazy by default (generators)       - Lazy by default (all iterator chains)
-- yield creates generators            - impl Iterator { fn next() }
-- StopIteration to end               - None to end
-- Can be consumed once               - Can be consumed once
-- No type safety                      - Fully type-safe
-- Slightly slower (interpreter)       - Zero-cost (compiled away)
+- デフォルトで遅延評価（ジェネレーター） - デフォルトで遅延評価（すべてのイテレーターチェーン）
+- yieldでジェネレーターを作成            - impl Iterator { fn next() }
+- StopIterationで終了                  - Noneで終了
+- 1度だけ消費可能                      - 1度だけ消費可能
+- 型安全性なし                         - 完全に型安全
+- やや低速（インタープリター）           - ゼロコスト（コンパイル時に除去）
 ```
 
 ***
 
 
-<!-- ch12a: Macros -->
-## Why Macros Exist in Rust
+<!-- ch12a: マクロ -->
+## Rustにマクロがある理由
 
-Python has no macro system — it uses decorators, metaclasses, and runtime
-introspection for metaprogramming. Rust uses macros for compile-time code generation.
+Pythonにはマクロシステムがありません。メタプログラミングにはデコレーター、メタクラス、実行時イントロスペクションを使います。
+Rustではマクロをコンパイル時のコード生成に使います。
 
-### Python Metaprogramming vs Rust Macros
+### PythonのメタプログラミングとRustのマクロ
 ```python
-# Python — decorators and metaclasses for metaprogramming
+# Python — メタプログラミングに使うデコレーターとメタクラス
 from dataclasses import dataclass
 from functools import wraps
 
-@dataclass              # Generates __init__, __repr__, __eq__ at import time
+@dataclass              # インポート時に__init__、__repr__、__eq__を生成
 class Point:
     x: float
     y: float
 
-# Custom decorator
+# 独自デコレーター
 def log_calls(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -296,14 +298,14 @@ def process(data):
 ```
 
 ```rust
-// Rust — derive macros and declarative macros for code generation
-#[derive(Debug, Clone, PartialEq)]  // Generates Debug, Clone, PartialEq impls at COMPILE time
+// Rust — コード生成に使うderiveマクロと宣言的マクロ
+#[derive(Debug, Clone, PartialEq)]  // コンパイル時にDebug、Clone、PartialEqの実装を生成
 struct Point {
     x: f64,
     y: f64,
 }
 
-// Declarative macro (like a template)
+// 宣言的マクロ（テンプレートのようなもの）
 macro_rules! log_call {
     ($func_name:expr, $body:expr) => {
         {
@@ -318,9 +320,9 @@ fn process(data: &str) -> String {
 }
 ```
 
-### Common Built-in Macros
+### よく使う組み込みマクロ
 ```rust
-// These macros are used everywhere in Rust:
+// これらのマクロはRustのあらゆる場所で使われる：
 
 println!("Hello, {}!", name);           // Print with formatting
 format!("Value: {}", x);               // Create formatted String
@@ -332,16 +334,16 @@ todo!();                                // Placeholder — compiles but panics i
 unimplemented!();                       // Mark code as unimplemented
 panic!("something went wrong");         // Crash with message (like raise RuntimeError)
 
-// Why are these macros instead of functions?
-// - println! accepts variable arguments (Rust functions can't)
-// - vec! generates code for any type and size
-// - assert_eq! knows the SOURCE CODE of what you compared
-// - dbg! knows the FILE NAME and LINE NUMBER
+// なぜこれらは関数ではなくマクロなのか？
+// - println!は可変個の引数を受け取れる（Rustの関数ではできない）
+// - vec!は任意の型とサイズに対応するコードを生成する
+// - assert_eq!は比較対象のソースコードを把握できる
+// - dbg!はファイル名と行番号を把握できる
 ```
 
-## Writing a Simple Macro with macro_rules!
+## macro_rules!で簡単なマクロを書く
 ```rust
-// Python dict() equivalent
+// Pythonのdict()に相当
 // Python: d = dict(a=1, b=2)
 // Rust:   let d = hashmap!{ "a" => 1, "b" => 2 };
 
@@ -362,9 +364,9 @@ let scores = hashmap! {
 };
 ```
 
-## Derive Macros — Auto-Implementing Traits
+## deriveマクロ — トレイトの自動実装
 ```rust
-// #[derive(...)] is the Rust equivalent of Python's @dataclass decorator
+// #[derive(...)]はPythonの@dataclassデコレーターに相当する
 
 // Python:
 // @dataclass(frozen=True, order=True)
@@ -379,42 +381,42 @@ struct Student {
     grade: i32,
 }
 
-// Common derive macros:
-// Debug         → {:?} formatting (like __repr__)
-// Clone         → .clone() deep copy
-// Copy          → implicit copy (only for simple types)
-// PartialEq, Eq → == comparison (like __eq__)
-// PartialOrd, Ord → <, >, sorting (like __lt__ etc.)
-// Hash          → usable as HashMap key (like __hash__)
-// Default       → MyType::default() (like __init__ with no args)
+// よく使うderiveマクロ：
+// Debug         → {:?}書式（__repr__に相当）
+// Clone         → .clone()によるディープコピー
+// Copy          → 暗黙のコピー（単純な型のみ）
+// PartialEq, Eq → ==による比較（__eq__に相当）
+// PartialOrd, Ord → <、>、ソート（__lt__などに相当）
+// Hash          → HashMapのキーとして使用可能（__hash__に相当）
+// Default       → MyType::default()（引数なしの__init__に相当）
 
-// Crate-provided derive macros:
-// Serialize, Deserialize (serde) → JSON/YAML/TOML serialization
-//                                  (like Python's json.dumps/loads but type-safe)
+// クレートが提供するderiveマクロ：
+// Serialize, Deserialize (serde) → JSON/YAML/TOMLのシリアライズ
+//                                  （Pythonのjson.dumps/loadsに似ているが型安全）
 ```
 
-### Python Decorator vs Rust Derive
+### PythonのデコレーターとRustのderive
 
-| Python Decorator | Rust Derive | Purpose |
+| Pythonのデコレーター | Rustのderive | 用途 |
 |-----------------|-------------|---------|
-| `@dataclass` | `#[derive(Debug, Clone, PartialEq)]` | Data class |
-| `@dataclass(frozen=True)` | Immutable by default | Immutability |
-| `@dataclass(order=True)` | `#[derive(Ord, PartialOrd)]` | Comparison/sorting |
-| `@total_ordering` | `#[derive(PartialOrd, Ord)]` | Full ordering |
-| JSON `json.dumps(obj.__dict__)` | `#[derive(Serialize)]` | Serialization |
-| JSON `MyClass(**json.loads(s))` | `#[derive(Deserialize)]` | Deserialization |
+| `@dataclass` | `#[derive(Debug, Clone, PartialEq)]` | データクラス |
+| `@dataclass(frozen=True)` | デフォルトで不変 | 不変性 |
+| `@dataclass(order=True)` | `#[derive(Ord, PartialOrd)]` | 比較・ソート |
+| `@total_ordering` | `#[derive(PartialOrd, Ord)]` | 全順序 |
+| JSON `json.dumps(obj.__dict__)` | `#[derive(Serialize)]` | シリアライズ |
+| JSON `MyClass(**json.loads(s))` | `#[derive(Deserialize)]` | デシリアライズ |
 
 ---
 
-## Exercises
+## 練習問題
 
 <details>
-<summary><strong>🏋️ Exercise: Derive and Custom Debug</strong> (click to expand)</summary>
+<summary><strong>🏋️ 練習問題：deriveと独自Debug実装</strong>（クリックして展開）</summary>
 
-**Challenge**: Create a `User` struct with fields `name: String`, `email: String`, and `password_hash: String`. Derive `Clone` and `PartialEq`, but implement `Debug` manually so it prints the name and email but redacts the password (shows `"***"` instead).
+**課題**：`name: String`、`email: String`、`password_hash: String`フィールドを持つ`User`構造体を作ってください。`Clone`と`PartialEq`をderiveし、名前とメールアドレスを表示しつつパスワードを伏せ字（`"***"`）にするよう、`Debug`を手動実装してください。
 
 <details>
-<summary>🔑 Solution</summary>
+<summary>🔑 解答</summary>
 
 ```rust
 use std::fmt;
@@ -443,14 +445,13 @@ fn main() {
         password_hash: "a1b2c3d4e5f6".into(),
     };
     println!("{user:?}");
-    // Output: User { name: "Alice", email: "alice@example.com", password_hash: "***" }
+    // 出力：User { name: "Alice", email: "alice@example.com", password_hash: "***" }
 }
 ```
 
-**Key takeaway**: Unlike Python's `__repr__`, Rust lets you derive `Debug` for free — but you can override it for sensitive fields. This is safer than Python where `print(user)` might accidentally leak secrets.
+**要点**：Pythonの`__repr__`とは異なり、Rustでは`Debug`を簡単にderiveできます。また、機密フィールドについては独自実装で表示を変更できます。`print(user)`で誤って秘密情報が漏れる可能性のあるPythonより安全です。
 
 </details>
 </details>
 
 ***
-

@@ -1,16 +1,18 @@
-## Algebraic Data Types vs Union Types
+<a id="algebraic-data-types-vs-union-types"></a>
+## 代数的データ型とユニオン型
 
-> **What you'll learn:** Rust enums with data vs Python `Union` types, exhaustive `match` vs `match/case`,
-> `Option<T>` as a compile-time replacement for `None`, and guard patterns.
+> **学習内容：** データを持つRustのenumとPythonの`Union`型、網羅性が保証される`match`と`match/case`の違い、
+> コンパイル時に`None`を安全に扱う`Option<T>`、ガードパターン。
 >
-> **Difficulty:** 🟡 Intermediate
+> **難易度：** 🟡 中級
 
-Python 3.10 introduced `match` statements and type unions. Rust's enums go further —
-each variant can carry different data, and the compiler ensures you handle every case.
+Python 3.10では`match`文とユニオン型が導入されました。Rustのenumはさらに強力で、
+各バリアントに異なるデータを持たせられ、すべてのケースを処理しているかコンパイラーが確認します。
 
-### Python Union Types and Match
+<a id="python-union-types-and-match"></a>
+### Pythonのユニオン型とmatch
 ```python
-# Python 3.10+ — structural pattern matching
+# Python 3.10以降 — 構造的パターンマッチング
 from typing import Union
 from dataclasses import dataclass
 
@@ -38,13 +40,14 @@ def area(shape: Shape) -> float:
             return w * h
         case Triangle(base=b, height=h):
             return 0.5 * b * h
-        # No compiler warning if you miss a case!
-        # Adding a new shape? grep the codebase and hope you find all match blocks.
+        # ケースを見落としてもコンパイラーは警告しない！
+        # 新しい図形を追加する場合、コードベースをgrepしてmatchブロックをすべて探す必要がある。
 ```
 
-### Rust Enums — Data-Carrying Variants
+<a id="rust-enums-data-carrying-variants"></a>
+### Rustのenum：データを持つバリアント
 ```rust
-// Rust — enum variants carry data, compiler enforces exhaustive matching
+// Rust — enumのバリアントはデータを保持でき、コンパイラーが網羅的なマッチングを強制する
 enum Shape {
     Circle(f64),                // Circle carries radius
     Rectangle(f64, f64),        // Rectangle carries width, height
@@ -56,34 +59,35 @@ fn area(shape: &Shape) -> f64 {
         Shape::Circle(r) => std::f64::consts::PI * r * r,
         Shape::Rectangle(w, h) => w * h,
         Shape::Triangle { base, height } => 0.5 * base * height,
-        // ❌ If you add Shape::Pentagon and forget to handle it here,
-        //    the compiler refuses to build. No grep needed.
+        // ❌ Shape::Pentagonを追加してここで処理し忘れると、
+        //    コンパイラーがビルドを拒否する。grepで探す必要はない。
     }
 }
 ```
 
-> **Key insight**: Rust's `match` is **exhaustive** — the compiler verifies you handle
-> every variant. Add a new variant to an enum and the compiler tells you exactly which
-> `match` blocks need updating. Python's `match` has no such guarantee.
+> **重要なポイント：** Rustの`match`は**網羅的**です。コンパイラーがすべてのバリアントを処理しているか確認します。
+> enumに新しいバリアントを追加すると、修正が必要な`match`ブロックをコンパイラーが正確に指摘します。
+> Pythonの`match`にはこのような保証がありません。
 
-### Enums Replace Multiple Python Patterns
+<a id="enums-replace-multiple-python-patterns"></a>
+### enumで置き換えられるPythonの複数のパターン
 
 ```python
-# Python — several patterns that Rust enums replace:
+# Python — Rustのenumで置き換えられるいくつかのパターン：
 
-# 1. String constants
+# 1. 文字列定数
 STATUS_PENDING = "pending"
 STATUS_ACTIVE = "active"
 STATUS_CLOSED = "closed"
 
-# 2. Python Enum (no data)
+# 2. PythonのEnum（データなし）
 from enum import Enum
 class Status(Enum):
     PENDING = "pending"
     ACTIVE = "active"
     CLOSED = "closed"
 
-# 3. Tagged unions (class + type field)
+# 3. タグ付きユニオン（クラス＋型フィールド）
 class Message:
     def __init__(self, kind, **data):
         self.kind = kind
@@ -93,16 +97,16 @@ class Message:
 ```
 
 ```rust
-// Rust — one enum does all three and more
+// Rust — 一つのenumですべてを実現し、さらに多くのことができる
 
-// 1. Simple enum (like Python's Enum)
+// 1. 単純なenum（PythonのEnumに相当）
 enum Status {
     Pending,
     Active,
     Closed,
 }
 
-// 2. Data-carrying enum (tagged union — type-safe!)
+// 2. データを持つenum（タグ付きユニオン — 型安全）
 enum Message {
     Text(String),
     Image { url: String, width: u32, height: u32 },
@@ -113,10 +117,10 @@ enum Message {
 
 ```mermaid
 flowchart TD
-    E["enum Message"] --> T["Text(String)<br/>🏷️ tag=0 + String data"]
-    E --> I["Image { url, width, height }<br/>🏷️ tag=1 + 3 fields"]
-    E --> Q["Quit<br/>🏷️ tag=2 + no data"]
-    E --> M["Move { x, y }<br/>🏷️ tag=3 + 2 fields"]
+    E["enum Message"] --> T["Text(String)<br/>🏷️ tag=0 + Stringデータ"]
+    E --> I["Image { url, width, height }<br/>🏷️ tag=1 + 3フィールド"]
+    E --> Q["Quit<br/>🏷️ tag=2 + データなし"]
+    E --> M["Move { x, y }<br/>🏷️ tag=3 + 2フィールド"]
     style E fill:#d4edda,stroke:#28a745
     style T fill:#fff3cd
     style I fill:#fff3cd
@@ -124,9 +128,10 @@ flowchart TD
     style M fill:#fff3cd
 ```
 
-> **Memory insight**: Rust enums are "tagged unions" — the compiler stores a discriminant tag + enough space for the largest variant. Python's equivalent (`Union[str, dict, None]`) has no compact representation.
+> **メモリーに関するポイント：** Rustのenumは「タグ付きユニオン」です。コンパイラーは識別タグと、最大のバリアントを格納できる領域を保持します。
+> Pythonでの相当物（`Union[str, dict, None]`）には、これに相当するコンパクトな表現はありません。
 >
-> 📌 **See also**: [Ch. 9 — Error Handling](ch09-error-handling.md) uses enums extensively — `Result<T, E>` and `Option<T>` are just enums with `match`.
+> 📌 **関連項目：** [第9章：エラー処理](ch09-error-handling.md)ではenumを多用します。`Result<T, E>`と`Option<T>`も`match`で扱うenumです。
 
 ```rust
 fn process(msg: &Message) {
@@ -143,37 +148,40 @@ fn process(msg: &Message) {
 
 ***
 
-## Exhaustive Pattern Matching
+<a id="exhaustive-pattern-matching"></a>
+## 網羅的なパターンマッチング
 
-### Python's match — Not Exhaustive
+<a id="pythons-match-not-exhaustive"></a>
+### Pythonのmatch：網羅性は保証されない
 ```python
-# Python — the wildcard case is optional, no compiler help
+# Python — ワイルドカードケースは任意で、コンパイラーの支援もない
 def describe(value):
     match value:
         case 0:
             return "zero"
         case 1:
             return "one"
-        # If you forget the default, Python returns None silently.
-        # No warning, no error.
+        # defaultを忘れると、Pythonは何も知らせずNoneを返す。
+        # 警告もエラーも出ない。
 
 describe(42)  # Returns None — a silent bug
 ```
 
-### Rust's match — Compiler-Enforced
+<a id="rusts-match-compiler-enforced"></a>
+### Rustのmatch：コンパイラーが網羅性を強制
 ```rust
-// Rust — MUST handle every possible case
+// Rust — すべてのケースを必ず処理する
 fn describe(value: i32) -> &'static str {
     match value {
         0 => "zero",
         1 => "one",
-        // ❌ Compile error: non-exhaustive patterns: `i32::MIN..=-1_i32`
-        //    and `2_i32..=i32::MAX` not covered
+        // ❌ コンパイルエラー：網羅されていないパターン：`i32::MIN..=-1_i32`
+        //    と`2_i32..=i32::MAX`が処理されていない
         _ => "other",   // _ = catch-all (required for open-ended types)
     }
 }
 
-// For enums, NO catch-all needed — compiler knows all variants:
+// enumではワイルドカードは不要 — コンパイラーがすべてのバリアントを把握している：
 enum Color { Red, Green, Blue }
 
 fn color_hex(c: Color) -> &'static str {
@@ -181,29 +189,30 @@ fn color_hex(c: Color) -> &'static str {
         Color::Red => "#ff0000",
         Color::Green => "#00ff00",
         Color::Blue => "#0000ff",
-        // No _ needed — all variants covered
-        // Add Color::Yellow later → compiler error HERE
+        // _は不要 — すべてのバリアントを処理済み
+        // 後からColor::Yellowを追加すると、ここでコンパイルエラーになる
     }
 }
 ```
 
-### Pattern Matching Features
+<a id="pattern-matching-features"></a>
+### パターンマッチングの機能
 ```rust
-// Multiple values (like Python's case 1 | 2 | 3:)
+// 複数の値（Pythonのcase 1 | 2 | 3:に相当）
 match value {
     1 | 2 | 3 => println!("small"),
     4..=9 => println!("medium"),    // Range patterns
     _ => println!("large"),
 }
 
-// Guards (like Python's case x if x > 0:)
+// ガード（Pythonのcase x if x > 0:に相当）
 match temperature {
     t if t > 100 => println!("boiling"),
     t if t < 0 => println!("freezing"),
     t => println!("normal: {t}°"),
 }
 
-// Nested destructuring
+// ネストした分配束縛
 let point = (3, (4, 5));
 match point {
     (0, _) => println!("on y-axis"),
@@ -214,82 +223,86 @@ match point {
 
 ***
 
-## Option for None Safety
+<a id="option-for-none-safety"></a>
+## `Option`による`None`の安全な扱い
 
-`Option<T>` is the most important Rust enum for Python developers. It replaces
-`None` with a type-safe alternative.
+`Option<T>`は、Python開発者にとって最も重要なRustのenumです。`None`を型安全な仕組みに置き換えます。
 
-### Python None
+<a id="python-none"></a>
+### Pythonの`None`
 
 ```python
-# Python — None is a value that can appear anywhere
+# Python — Noneはどこにでも現れる値
 def find_user(user_id: int) -> dict | None:
     users = {1: {"name": "Alice"}}
     return users.get(user_id)
 
 user = find_user(999)
-# user is None — but nothing forces you to check!
+# userはNoneだが、チェックを強制するものはない！
 print(user["name"])  # 💥 TypeError at runtime
 ```
 
-### Rust Option
+<a id="rust-option"></a>
+### Rustの`Option`
 
 ```rust
-// Rust — Option<T> forces you to handle the None case
+// Rust — Option<T>によってNoneの場合の処理が必須になる
 fn find_user(user_id: i64) -> Option<User> {
     let users = HashMap::from([(1, User { name: "Alice".into() })]);
     users.get(&user_id).cloned()
 }
 
 let user = find_user(999);
-// user is Option<User> — you CANNOT use it without handling None
+// userはOption<User> — Noneを処理せずに使うことはできない
 
-// Method 1: match
+// 方法1：match
 match find_user(999) {
     Some(user) => println!("Found: {}", user.name),
     None => println!("Not found"),
 }
 
-// Method 2: if let (like Python's if (x := expr) is not None)
+// 方法2：if let（Pythonのif (x := expr) is not Noneに相当）
 if let Some(user) = find_user(1) {
     println!("Found: {}", user.name);
 }
 
-// Method 3: unwrap_or
+// 方法3：unwrap_or
 let name = find_user(999)
     .map(|u| u.name)
     .unwrap_or_else(|| "Unknown".to_string());
 
-// Method 4: ? operator (in functions that return Option)
+// 方法4：?演算子（Optionを返す関数内で使用）
 fn get_user_name(id: i64) -> Option<String> {
     let user = find_user(id)?;     // Returns None early if not found
     Some(user.name)
 }
 ```
 
-### Option Methods — Python Equivalents
+<a id="option-methods-python-equivalents"></a>
+### `Option`のメソッドとPythonでの対応
 
-| Pattern | Python | Rust |
+| パターン | Python | Rust |
 |---------|--------|------|
-| Check if exists | `if x is not None:` | `if let Some(x) = opt {` |
-| Default value | `x or default` | `opt.unwrap_or(default)` |
-| Default factory | `x or compute()` | `opt.unwrap_or_else(\|\| compute())` |
-| Transform if exists | `f(x) if x else None` | `opt.map(f)` |
-| Chain lookups | `x and x.attr and x.attr.method()` | `opt.and_then(\|x\| x.method())` |
-| Crash if None | Not possible to prevent | `opt.unwrap()` (panic) or `opt.expect("msg")` |
-| Get or raise | `x if x else raise` | `opt.ok_or(Error)?` |
+| 存在確認 | `if x is not None:` | `if let Some(x) = opt {` |
+| デフォルト値 | `x or default` | `opt.unwrap_or(default)` |
+| デフォルト値の生成 | `x or compute()` | `opt.unwrap_or_else(\|\| compute())` |
+| 値があれば変換 | `f(x) if x else None` | `opt.map(f)` |
+| 連続した参照 | `x and x.attr and x.attr.method()` | `opt.and_then(\|x\| x.method())` |
+| Noneでpanic | 防止できない | `opt.unwrap()`（panic）または`opt.expect("msg")` |
+| 値がなければエラー | `x if x else raise` | `opt.ok_or(Error)?` |
 
 ---
 
-## Exercises
+<a id="exercises"></a>
+## 練習問題
 
 <details>
-<summary><strong>🏋️ Exercise: Shape Area Calculator</strong> (click to expand)</summary>
+<summary><strong>🏋️ 練習問題：図形の面積計算</strong>（クリックして展開）</summary>
 
-**Challenge**: Define an enum `Shape` with variants `Circle(f64)` (radius), `Rectangle(f64, f64)` (width, height), and `Triangle(f64, f64)` (base, height). Implement a method `fn area(&self) -> f64` using `match`. Create one of each and print the area.
+**課題：** `Circle(f64)`（半径）、`Rectangle(f64, f64)`（幅、高さ）、`Triangle(f64, f64)`（底辺、高さ）の各バリアントを持つenum `Shape`を定義してください。`match`を使って`fn area(&self) -> f64`メソッドを実装します。それぞれの図形を一つずつ作成し、面積を出力してください。
 
 <details>
-<summary>🔑 Solution</summary>
+<summary>🔑 解答</summary>
 
 ```rust
 use std::f64::consts::PI;
@@ -322,11 +335,9 @@ fn main() {
 }
 ```
 
-**Key takeaway**: Rust enums replace Python's `Union[Circle, Rectangle, Triangle]` + `isinstance()` checks. The compiler ensures you handle every variant — adding a new shape without updating `area()` is a compile error.
+**要点：** Rustのenumは、Pythonの`Union[Circle, Rectangle, Triangle]`と`isinstance()`による判定を置き換えます。コンパイラーがすべてのバリアントを処理しているか確認するため、新しい図形を追加したのに`area()`を更新し忘れるとコンパイルエラーになります。
 
 </details>
 </details>
 
 ***
-
-

@@ -1,10 +1,12 @@
-## Conditional Statements
+<a id="conditional-statements"></a>
+## 条件分岐
 
-> **What you'll learn:** `if`/`else` without parentheses (but with braces), `loop`/`while`/`for` vs Python's iteration model,
-> expression blocks (everything returns a value), and function signatures with mandatory return types.
+> **学習内容：** 括弧は不要だが波括弧を使う`if`/`else`、Pythonの反復モデルとRustの`loop`/`while`/`for`、
+> 値を返す式ブロック、戻り値の型が必須となる関数シグネチャ。
 >
-> **Difficulty:** 🟢 Beginner
+> **難易度：** 🟢 初級
 
+<a id="ifelse"></a>
 ### if/else
 
 ```python
@@ -16,12 +18,12 @@ elif temperature < 0:
 else:
     print("Just right")
 
-# Ternary
+# 三項演算子
 status = "hot" if temperature > 100 else "ok"
 ```
 
 ```rust
-// Rust — braces required, no colons, `else if` not `elif`
+// Rust — 波括弧が必要で、コロンは使わず、`elif`ではなく`else if`
 if temperature > 100 {
     println!("Too hot!");
 } else if temperature < 0 {
@@ -30,38 +32,41 @@ if temperature > 100 {
     println!("Just right");
 }
 
-// if is an EXPRESSION — returns a value (like Python ternary, but more powerful)
+// ifは式で、値を返す（Pythonの三項演算子に似ているが、より強力）
 let status = if temperature > 100 { "hot" } else { "ok" };
 ```
 
-### Important Differences
+<a id="important-differences"></a>
+### 主な違い
 ```rust
-// 1. Condition must be a bool — no truthy/falsy
+// 1. 条件はboolでなければならず、真偽値として扱われる値はない
 let x = 42;
-// if x { }          // ❌ Error: expected bool, found integer
-if x != 0 { }        // ✅ Explicit comparison required
+// if x { }          // ❌ エラー：boolが必要だが、整数が渡された
+if x != 0 { }        // ✅ 明示的な比較が必要
 
-// In Python, these are all truthy/falsy:
-// if []:      → False    (empty list)
-// if "":      → False    (empty string)
-// if 0:       → False    (zero)
+// Pythonでは次の値はすべて偽として扱われる：
+// if []:      → False    （空のリスト）
+// if "":      → False    （空の文字列）
+// if 0:       → False    （ゼロ）
 // if None:    → False
 
-// In Rust, ONLY bool works in conditions:
+// Rustではboolだけが条件として使える：
 let items: Vec<i32> = vec![];
-// if items { }           // ❌ Error
-if !items.is_empty() { }  // ✅ Explicit check
+// if items { }           // ❌ エラー
+if !items.is_empty() { }  // ✅ 明示的に確認
 
 let name = "";
-// if name { }             // ❌ Error
-if !name.is_empty() { }    // ✅ Explicit check
+// if name { }             // ❌ エラー
+if !name.is_empty() { }    // ✅ 明示的に確認
 ```
 
 ***
 
-## Loops and Iteration
+<a id="loops-and-iteration"></a>
+## ループと反復処理
 
-### for Loops
+<a id="for-loops"></a>
+### forループ
 ```python
 # Python
 for i in range(5):
@@ -79,36 +84,38 @@ for key, value in {"x": 1, "y": 2}.items():
 
 ```rust
 // Rust
-for i in 0..5 {                           // range(5) → 0..5
+for i in 0..5 {                           // range(5)に相当 → 0..5
     println!("{}", i);
 }
 
-for item in ["a", "b", "c"] {             // Direct iteration
+for item in ["a", "b", "c"] {             // 直接反復
     println!("{}", item);
 }
 
-for (i, item) in ["a", "b", "c"].iter().enumerate() {  // enumerate()
+for (i, item) in ["a", "b", "c"].iter().enumerate() {  // enumerate()に相当
     println!("{}: {}", i, item);
 }
 
-// HashMap iteration
+// HashMapの反復処理
 use std::collections::HashMap;
 let map = HashMap::from([("x", 1), ("y", 2)]);
-for (key, value) in &map {                // & borrows the map
+for (key, value) in &map {                // &でmapを借用
     println!("{} = {}", key, value);
 }
 ```
 
-### Range Syntax
+<a id="range-syntax"></a>
+### 範囲の構文
 ```rust
-Python:              Rust:               Notes:
-range(5)             0..5                Half-open (excludes end)
-range(1, 10)         1..10               Half-open
-range(1, 11)         1..=10              Inclusive (includes end)
-range(0, 10, 2)      (0..10).step_by(2)  Step (method, not syntax)
+Python：              Rust：              備考：
+range(5)             0..5                終端を含まない範囲
+range(1, 10)         1..10               終端を含まない範囲
+range(1, 11)         1..=10              終端を含む範囲
+range(0, 10, 2)      (0..10).step_by(2)  ステップ幅（構文ではなくメソッド）
 ```
 
-### while Loops
+<a id="while-loops"></a>
+### whileループ
 ```python
 # Python
 count = 0
@@ -116,7 +123,7 @@ while count < 5:
     print(count)
     count += 1
 
-# Infinite loop
+# 無限ループ
 while True:
     data = get_input()
     if data == "quit":
@@ -131,7 +138,7 @@ while count < 5 {
     count += 1;
 }
 
-// Infinite loop — use `loop`, not `while true`
+// 無限ループ — `while true`ではなく`loop`を使う
 loop {
     let data = get_input();
     if data == "quit" {
@@ -139,67 +146,68 @@ loop {
     }
 }
 
-// loop can return a value! (unique to Rust)
+// loopは値を返せる！（Rust独自の機能）
 let result = loop {
     let input = get_input();
     if let Ok(num) = input.parse::<i32>() {
-        break num;  // `break` with a value — like return for loops
+        break num;  // 値を伴う`break` — ループに対するreturnのようなもの
     }
     println!("Not a number, try again");
 };
 ```
 
-### List Comprehensions vs Iterator Chains
+<a id="list-comprehensions-vs-iterator-chains"></a>
+### リスト内包表記とイテレーターチェーンの比較
 ```python
-# Python — list comprehensions
+# Python — リスト内包表記
 squares = [x ** 2 for x in range(10)]
 evens = [x for x in range(20) if x % 2 == 0]
 pairs = [(x, y) for x in range(3) for y in range(3)]
 ```
 
 ```rust
-// Rust — iterator chains (.map, .filter, .collect)
+// Rust — イテレーターチェーン（.map、.filter、.collect）
 let squares: Vec<i32> = (0..10).map(|x| x * x).collect();
 let evens: Vec<i32> = (0..20).filter(|x| x % 2 == 0).collect();
 let pairs: Vec<(i32, i32)> = (0..3)
     .flat_map(|x| (0..3).map(move |y| (x, y)))
     .collect();
 
-// These are LAZY — nothing runs until .collect()
-// Python comprehensions are eager (run immediately)
-// Rust iterators can be more efficient for large datasets
+// これらは遅延評価され、.collect()するまで実行されない。
+// Pythonの内包表記は即時評価される（その場で実行される）。
+// Rustのイテレーターは、大きなデータセットでより効率的な場合がある。
 ```
 
 ***
 
-## Expression Blocks
+<a id="expression-blocks"></a>
+## 式ブロック
 
-Everything in Rust is an expression (or can be). This is a big shift from Python,
-where `if`/`for` are statements.
+Rustではすべてが式であるか、式として扱えます。これは、`if`や`for`が文であるPythonとは大きく異なる点です。
 
 ```python
-# Python — if is a statement (except ternary)
+# Python — ifは文（三項演算子を除く）
 if condition:
     result = "yes"
 else:
     result = "no"
 
-# Or ternary (limited to one expression):
+# または三項演算子（式一つに限られる）：
 result = "yes" if condition else "no"
 ```
 
 ```rust
-// Rust — if is an expression (returns a value)
+// Rust — ifは式で、値を返す
 let result = if condition { "yes" } else { "no" };
 
-// Blocks are expressions — the last line (without semicolon) is the return value
+// ブロックは式 — 最後の行（セミコロンなし）が戻り値になる
 let value = {
     let x = 5;
     let y = 10;
-    x + y    // No semicolon → this is the value of the block (15)
+    x + y    // セミコロンなし → これがブロックの値（15）
 };
 
-// match is an expression too
+// matchも式
 let description = match temperature {
     t if t > 100 => "boiling",
     t if t > 50 => "hot",
@@ -208,72 +216,75 @@ let description = match temperature {
 };
 ```
 
-The following diagram illustrates the core difference between Python's statement-based and Rust's expression-based control flow:
+次の図は、文ベースのPythonと式ベースのRustにおける制御フローの根本的な違いを示しています。
 
 ```mermaid
 flowchart LR
-    subgraph Python ["Python — Statements"]
+    subgraph Python ["Python — 文"]
         P1["if condition:"] --> P2["result = 'yes'"]
         P1 --> P3["result = 'no'"]
-        P2 --> P4["result used later"]
+        P2 --> P4["後でresultを使用"]
         P3 --> P4
     end
 
     Python ~~~ Rust
-    subgraph Rust ["Rust — Expressions"]
+    subgraph Rust ["Rust — 式"]
         R1["let result = if cond"] --> R2["{ 'yes' }"]
         R1 --> R3["{ 'no' }"]
-        R2 --> R4["value returned directly"]
+        R2 --> R4["値を直接返す"]
         R3 --> R4
     end
     style Python fill:#ffeeba
     style Rust fill:#d4edda
 ```
 
-> **The semicolon rule**: In Rust, the last expression in a block **without a semicolon**
-> is the block's return value. Adding a semicolon makes it a statement (returns `()`).
-> This trips up Python developers initially — it's like an implicit `return`.
+> **セミコロンのルール：** Rustでは、ブロックの最後にある式にセミコロンを付けないと、
+> その式がブロックの戻り値になります。セミコロンを付けると文になり、`()`を返します。
+> 暗黙の`return`のような仕組みなので、Python開発者は最初戸惑うことがあります。
 
 ***
 
-## Functions and Type Signatures
+<a id="functions-and-type-signatures"></a>
+## 関数と型シグネチャ
 
-### Python Functions
+<a id="python-functions"></a>
+### Pythonの関数
 ```python
-# Python — types optional, dynamic dispatch
+# Python — 型は任意で、動的ディスパッチ
 def greet(name: str, greeting: str = "Hello") -> str:
     return f"{greeting}, {name}!"
 
-# Default args, *args, **kwargs
+# デフォルト引数、*args、**kwargs
 def flexible(*args, **kwargs):
     pass
 
-# First-class functions
+# 第一級関数
 def apply(f, x):
     return f(x)
 
 result = apply(lambda x: x * 2, 5)  # 10
 ```
 
-### Rust Functions
+<a id="rust-functions"></a>
+### Rustの関数
 ```rust
-// Rust — types REQUIRED on function signatures, no defaults
+// Rust — 関数シグネチャでは型が必須で、デフォルト引数はない
 fn greet(name: &str, greeting: &str) -> String {
     format!("{}, {}!", greeting, name)
 }
 
-// No default arguments — use builder pattern or Option
+// デフォルト引数はない — ビルダーパターンまたはOptionを使う
 fn greet_with_default(name: &str, greeting: Option<&str>) -> String {
     let greeting = greeting.unwrap_or("Hello");
     format!("{}, {}!", greeting, name)
 }
 
-// No *args/**kwargs — use slices or structs
+// *args/**kwargsはない — スライスまたは構造体を使う
 fn sum_all(numbers: &[i32]) -> i32 {
     numbers.iter().sum()
 }
 
-// First-class functions and closures
+// 第一級関数とクロージャー
 fn apply(f: fn(i32) -> i32, x: i32) -> i32 {
     f(x)
 }
@@ -281,29 +292,31 @@ fn apply(f: fn(i32) -> i32, x: i32) -> i32 {
 let result = apply(|x| x * 2, 5);  // 10
 ```
 
-### Return Values
+<a id="return-values"></a>
+### 戻り値
 ```python
-# Python — return is explicit, None is implicit
+# Python — returnは明示し、Noneは暗黙
 def divide(a, b):
     if b == 0:
-        return None  # Or raise an exception
+        return None  # または例外を送出
     return a / b
 ```
 
 ```rust
-// Rust — last expression is the return value (no semicolon)
+// Rust — 最後の式が戻り値になる（セミコロンなし）
 fn divide(a: f64, b: f64) -> Option<f64> {
     if b == 0.0 {
-        None              // Early return (could also write `return None;`)
+        None              // 早期リターン（`return None;`とも書ける）
     } else {
-        Some(a / b)       // Last expression — implicit return
+        Some(a / b)       // 最後の式 — 暗黙の戻り値
     }
 }
 ```
 
-### Multiple Return Values
+<a id="multiple-return-values"></a>
+### 複数の戻り値
 ```python
-# Python — return a tuple
+# Python — タプルを返す
 def min_max(numbers):
     return min(numbers), max(numbers)
 
@@ -311,7 +324,7 @@ lo, hi = min_max([3, 1, 4, 1, 5])
 ```
 
 ```rust
-// Rust — return a tuple (same concept!)
+// Rust — タプルを返す（同じ考え方）
 fn min_max(numbers: &[i32]) -> (i32, i32) {
     let min = *numbers.iter().min().unwrap();
     let max = *numbers.iter().max().unwrap();
@@ -321,38 +334,40 @@ fn min_max(numbers: &[i32]) -> (i32, i32) {
 let (lo, hi) = min_max(&[3, 1, 4, 1, 5]);
 ```
 
-### Methods: self vs &self vs &mut self
+<a id="methods-self-vs-self-vs-mut-self"></a>
+### メソッド：`self`、`&self`、`&mut self`の違い
 ```rust
-// In Python, `self` is always a mutable reference to the object.
-// In Rust, you choose:
+// Pythonでは、`self`は常にオブジェクトへの可変参照。
+// Rustでは使い分ける：
 
 impl MyStruct {
-    fn new() -> Self { ... }                // No self — "static method" / "classmethod"
-    fn read_only(&self) { ... }             // &self — borrows immutably (can't modify)
-    fn modify(&mut self) { ... }            // &mut self — borrows mutably (can modify)
-    fn consume(self) { ... }                // self — takes ownership (object is moved)
+    fn new() -> Self { ... }                // selfなし — 「静的メソッド」/「classmethod」
+    fn read_only(&self) { ... }             // &self — 不変で借用（変更不可）
+    fn modify(&mut self) { ... }            // &mut self — 可変で借用（変更可能）
+    fn consume(self) { ... }                // self — 所有権を取得（オブジェクトが移動）
 }
 
-// Python equivalent:
+// Pythonでの対応例：
 // class MyStruct:
 //     @classmethod
-//     def new(cls): ...                    # No instance needed
-//     def read_only(self): ...             # All three are the same in Python:
-//     def modify(self): ...                # Python self is always mutable
-//     def consume(self): ...               # Python never "consumes" self
+//     def new(cls): ...                    # インスタンスは不要
+//     def read_only(self): ...             # Pythonでは次の3つは同じ：
+//     def modify(self): ...                # Pythonのselfは常に可変
+//     def consume(self): ...               # Pythonではselfを「消費」しない
 ```
 
 ---
 
-## Exercises
+<a id="exercises"></a>
+## 練習問題
 
 <details>
-<summary><strong>🏋️ Exercise: FizzBuzz with Expressions</strong> (click to expand)</summary>
+<summary><strong>🏋️ 練習問題：式を使ったFizzBuzz</strong>（クリックして展開）</summary>
 
-**Challenge**: Write FizzBuzz for 1..=30 using Rust's expression-based `match`. Each number should print "Fizz", "Buzz", "FizzBuzz", or the number. Use `match (n % 3, n % 5)` as the expression.
+**課題：** Rustの式ベースの`match`を使って、1..=30のFizzBuzzを書いてください。各数について`"Fizz"`、`"Buzz"`、`"FizzBuzz"`または数値を出力します。`match (n % 3, n % 5)`を式として使ってください。
 
 <details>
-<summary>🔑 Solution</summary>
+<summary>🔑 解答</summary>
 
 ```rust
 fn main() {
@@ -368,10 +383,9 @@ fn main() {
 }
 ```
 
-**Key takeaway**: `match` is an expression that returns a value — no need for `if/elif/else` chains. The `_` wildcard replaces Python's `case _:` default.
+**要点：** `match`は値を返す式なので、`if/elif/else`を連ねる必要はありません。ワイルドカード`_`はPythonの既定ケース`case _:`に相当します。
 
 </details>
 </details>
 
 ***
-

@@ -1,53 +1,53 @@
-## Understanding Ownership
+<a id="understanding-ownership"></a>
 
-> **What you'll learn:** Why Rust has ownership (no GC!), move semantics vs Python's reference counting,
-> borrowing (`&` and `&mut`), lifetime basics, and smart pointers (`Box`, `Rc`, `Arc`).
+## 所有権を理解する
+
+> **学習内容:** Rustに所有権がある理由（GCなし！）、Pythonの参照カウントとムーブセマンティクスの違い、
+> 借用（`&` と `&mut`）、ライフタイムの基礎、スマートポインター（`Box`、`Rc`、`Arc`）。
 >
-> **Difficulty:** 🟡 Intermediate
+> **難易度:** 🟡 中級
 
-This is the hardest concept for Python developers. In Python, you never think about
-who "owns" data — the garbage collector handles it. In Rust, every value has exactly
-one owner, and the compiler tracks this at compile time.
+これはPython開発者にとって最も難しい概念です。Pythonでは、データを「所有」するのが誰かを意識することはありません。ガベージコレクターが処理するからです。Rustでは、すべての値に所有者が1つだけ存在し、コンパイラーがコンパイル時にそれを追跡します。
 
-### Python: Shared References Everywhere
+### Python：あらゆる場所で共有される参照
 ```python
-# Python — everything is a reference, gc cleans up
+# Python — すべてが参照であり、GCが後片付けする
 a = [1, 2, 3]
-b = a              # b and a point to the SAME list
+b = a              # bとaは同じリストを指す
 b.append(4)
-print(a)            # [1, 2, 3, 4] — surprise! a changed too
+print(a)            # [1, 2, 3, 4] — なんと、aまで変わった！
 
-# Who owns the list? Both a and b reference it.
-# The garbage collector frees it when no references remain.
-# You never think about this.
+# このリストの所有者は誰？ aとbの両方が参照している。
+# 参照がなくなるとガベージコレクターが解放する。
+# 普段これを意識する必要はない。
 ```
 
-### Rust: Single Ownership
+### Rust：単一の所有権
 ```rust
-// Rust — every value has exactly ONE owner
+// Rust — すべての値の所有者は1つだけ
 let a = vec![1, 2, 3];
-let b = a;           // Ownership MOVES from a to b
-// println!("{:?}", a); // ❌ Compile error: value used after move
+let b = a;           // 所有権がaからbへムーブする
+// println!("{:?}", a); // ❌ コンパイルエラー：ムーブ後に値を使用
 
-// a no longer exists. b is the sole owner.
+// aはもう使えない。唯一の所有者はb。
 println!("{:?}", b); // ✅ [1, 2, 3]
 
-// When b goes out of scope, the Vec is freed. Deterministic. No GC.
+// bがスコープを抜けるとVecが解放される。決定的で、GCは不要。
 ```
 
-### The Three Ownership Rules
+### 所有権の3つのルール
 ```rust
-1. Each value has exactly ONE owner variable.
-2. When the owner goes out of scope, the value is dropped (freed).
-3. Ownership can be transferred (moved) but not duplicated (unless Clone).
+1. 各値の所有者となる変数は1つだけ。
+2. 所有者がスコープを抜けると、値はドロップ（解放）される。
+3. 所有権は移転（ムーブ）できるが、複製はできない（`Clone`を除く）。
 ```
 
-### Move Semantics — The Biggest Python Shock
+### ムーブセマンティクス — Python開発者が最も驚く点
 ```python
-# Python — assignment copies the reference, not the data
+# Python — 代入でコピーされるのはデータではなく参照
 def process(data):
     data.append(42)
-    # Original list is modified!
+    # 元のリストが変更される！
 
 my_list = [1, 2, 3]
 process(my_list)
@@ -55,102 +55,102 @@ print(my_list)       # [1, 2, 3, 42] — modified by process!
 ```
 
 ```rust
-// Rust — passing to a function MOVES ownership (for non-Copy types)
+// Rust — 関数に渡すと所有権がムーブする（Copy型以外の場合）
 fn process(mut data: Vec<i32>) -> Vec<i32> {
     data.push(42);
-    data  // Must return it to give ownership back!
+    data  // 所有権を返すには値を返す必要がある！
 }
 
 let my_vec = vec![1, 2, 3];
-let my_vec = process(my_vec);  // Ownership moves in and back out
+let my_vec = process(my_vec);  // 所有権が関数に渡り、戻ってくる
 println!("{:?}", my_vec);      // [1, 2, 3, 42]
 
-// Or better — borrow instead of moving:
+// より良い方法：ムーブせずに借用する
 fn process_borrowed(data: &mut Vec<i32>) {
     data.push(42);
 }
 
 let mut my_vec = vec![1, 2, 3];
-process_borrowed(&mut my_vec);  // Lend it temporarily
+process_borrowed(&mut my_vec);  // 一時的に貸し出す
 println!("{:?}", my_vec);       // [1, 2, 3, 42] — still ours
 ```
 
-### Ownership Visualized
+### 所有権を図で見る
 
 ```text
 Python:                              Rust:
 
   a ──────┐                           a ──→ [1, 2, 3]
            ├──→ [1, 2, 3]
-  b ──────┘                           After: let b = a;
+  b ──────┘                           その後：let b = a;
 
-  (a and b share one object)          a  (invalid, moved)
-  (refcount = 2)                      b ──→ [1, 2, 3]
-                                      (only b owns the data)
+  (aとbが1つのオブジェクトを共有)    a  (無効、ムーブ済み)
+  (参照カウント = 2)                  b ──→ [1, 2, 3]
+                                      (bだけがデータを所有)
 
-  del a → refcount = 1                drop(b) → data freed
-  del b → refcount = 0 → freed        (deterministic, no GC)
+  del a → 参照カウント = 1           drop(b) → データ解放
+  del b → 参照カウント = 0 → 解放    (決定的、GC不要)
 ```
 
 ```mermaid
 stateDiagram-v2
-    state "Python (Reference Counting)" as PY {
+    state "Python（参照カウント）" as PY {
         [*] --> a_owns: a = [1,2,3]
         a_owns --> shared: b = a
-        shared --> b_only: del a (refcount 2→1)
-        b_only --> freed: del b (refcount 1→0)
-        note right of shared: Both a and b point<br/>to the SAME object
+        shared --> b_only: del a（参照カウント 2→1）
+        b_only --> freed: del b（参照カウント 1→0）
+        note right of shared: aとbの両方が<br/>同じオブジェクトを指す
     }
-    state "Rust (Ownership Move)" as RS {
+    state "Rust（所有権のムーブ）" as RS {
         [*] --> a_owns2: let a = vec![1,2,3]
-        a_owns2 --> b_owns: let b = a (MOVE)
-        b_owns --> freed2: b goes out of scope
-        note right of b_owns: a is INVALID after move<br/>Compile error if used
+        a_owns2 --> b_owns: let b = a（ムーブ）
+        b_owns --> freed2: bがスコープを抜ける
+        note right of b_owns: ムーブ後のaは無効<br/>使うとコンパイルエラー
     }
 ```
 
 ***
 
-## Move Semantics vs Reference Counting
+## ムーブセマンティクスと参照カウント
 
-### Copy vs Move
+### コピーとムーブ
 ```rust
-// Simple types (integers, floats, bools, chars) are COPIED, not moved
+// 単純な型（整数、浮動小数点数、bool、char）はムーブではなくコピーされる
 let x = 42;
-let y = x;    // x is COPIED to y (both valid)
+let y = x;    // xがyにコピーされる（どちらも有効）
 println!("{x} {y}");  // ✅ 42 42
 
-// Heap-allocated types (String, Vec, HashMap) are MOVED
+// ヒープ確保される型（String、Vec、HashMap）はムーブされる
 let s1 = String::from("hello");
-let s2 = s1;  // s1 is MOVED to s2
-// println!("{s1}");  // ❌ Error: value used after move
+let s2 = s1;  // s1がs2へムーブされる
+// println!("{s1}");  // ❌ エラー：ムーブ後に値を使用
 
-// To explicitly copy heap data, use .clone()
+// ヒープ上のデータを明示的に複製するには.clone()を使う
 let s1 = String::from("hello");
-let s2 = s1.clone();  // Deep copy
+let s2 = s1.clone();  // ディープコピー
 println!("{s1} {s2}");  // ✅ hello hello (both valid)
 ```
 
-### Python Developer's Mental Model
+### Python開発者向けの考え方
 ```text
 Python:                    Rust:
 ─────────                  ─────
 int, float, bool           Copy types (i32, f64, bool, char)
-→ shared refs to immutable  → bitwise copied on assignment
-  objects (no real copy)     (always independent values)
-                           (Note: Python caches small ints; Rust copies are always predictable)
+→ 不変オブジェクトへの共有参照  → 代入時にビット単位でコピー
+  （実際のコピーではない）       （常に独立した値）
+                           （注：Pythonは小さい整数をキャッシュするが、Rustのコピーは常に予測可能）
 
 list, dict, str            Move types (Vec, HashMap, String)
-→ shared reference         → ownership transfer (different behavior!)
-→ gc cleans up             → owner drops data
-→ clone with list(x)       → clone with x.clone()
-   or copy.deepcopy(x)
+→ 共有参照                   → 所有権の移転（動作が異なる！）
+→ GCが後片付け               → 所有者がデータをドロップ
+→ list(x)で複製              → x.clone()で複製
+   またはcopy.deepcopy(x)
 ```
 
-### When Python's Sharing Model Causes Bugs
+### Pythonの共有モデルがバグを引き起こす場合
 
 ```python
-# Python — accidental aliasing
+# Python — 意図しない別名参照
 def remove_duplicates(items):
     seen = set()
     result = []
@@ -161,16 +161,16 @@ def remove_duplicates(items):
     return result
 
 original = [1, 2, 2, 3, 3, 3]
-alias = original          # Alias, NOT a copy
+alias = original          # コピーではなく別名
 unique = remove_duplicates(alias)
-# original is still [1, 2, 2, 3, 3, 3] — but only because we didn't mutate
-# If remove_duplicates modified the input, original would be affected too
+# originalはまだ[1, 2, 2, 3, 3, 3] — 入力を変更していないため
+# remove_duplicatesが入力を変更したら、originalにも影響する
 ```
 
 ```rust
 use std::collections::HashSet;
 
-// Rust — ownership prevents accidental aliasing
+// Rust — 所有権によって意図しない別名参照を防ぐ
 fn remove_duplicates(items: &[i32]) -> Vec<i32> {
     let mut seen = HashSet::new();
     items.iter()
@@ -180,35 +180,35 @@ fn remove_duplicates(items: &[i32]) -> Vec<i32> {
 }
 
 let original = vec![1, 2, 2, 3, 3, 3];
-let unique = remove_duplicates(&original); // Borrows — can't modify
-// original is guaranteed unchanged — compiler prevented mutation via &
+let unique = remove_duplicates(&original); // 借用するため変更できない
+// コンパイラーが&による変更を防ぎ、originalが変更されないことを保証
 ```
 
 ***
 
-## Borrowing and Lifetimes
+## 借用とライフタイム
 
-### Borrowing = Lending a Book
+### 借用は本を貸すこと
 ```rust
-Think of ownership like a physical book:
+所有権を実際の本にたとえて考えてみましょう。
 
-Python:  Everyone has a photocopy (shared references + GC)
-Rust:    One person owns the book. Others can:
-         - &book     = look at it (immutable borrow, many allowed)
-         - &mut book = write in it (mutable borrow, exclusive)
-         - book      = give it away (move)
+Python:  誰もがコピーを持つ（共有参照 + GC）
+Rust:    1人が本を所有する。他の人は次のことができる：
+         - &book     = 閲覧する（不変借用、複数可能）
+         - &mut book = 書き込む（可変借用、排他的）
+         - book      = 譲り渡す（ムーブ）
 ```
 
-### Borrowing Rules
+### 借用のルール
 
 ```mermaid
 flowchart TD
-    R["Borrowing Rules"] --> IMM["✅ Many &T<br/>(shared/immutable)"]
-    R --> MUT["✅ One &mut T<br/>(exclusive/mutable)"]
-    R --> CONFLICT["❌ &T + &mut T<br/>(NEVER at same time)"]
-    IMM --> SAFE["Multiple readers, safe"]
-    MUT --> SAFE2["Single writer, safe"]
-    CONFLICT --> ERR["Compile error!"]
+    R["借用のルール"] --> IMM["✅ 複数の&T<br/>(共有/不変)"]
+    R --> MUT["✅ 1つの&mut T<br/>(排他的/可変)"]
+    R --> CONFLICT["❌ &T + &mut T<br/>(同時には絶対不可)"]
+    IMM --> SAFE["複数の読み手、安全"]
+    MUT --> SAFE2["単一の書き手、安全"]
+    CONFLICT --> ERR["コンパイルエラー！"]
     style IMM fill:#d4edda
     style MUT fill:#d4edda
     style CONFLICT fill:#f8d7da
@@ -216,103 +216,98 @@ flowchart TD
 ```
 
 ```rust
-// Rule 1: You can have MANY immutable borrows OR ONE mutable borrow (not both)
+// ルール1：複数の不変借用、または1つの可変借用が可能（両方同時は不可）
 
 let mut data = vec![1, 2, 3];
 
-// Multiple immutable borrows — fine
+// 複数の不変借用 — 問題なし
 let a = &data;
 let b = &data;
 println!("{:?} {:?}", a, b);  // ✅
 
-// Mutable borrow — must be exclusive
+// 可変借用 — 排他的でなければならない
 let c = &mut data;
 c.push(4);
-// println!("{:?}", a);  // ❌ Error: can't use immutable borrow while mutable exists
+// println!("{:?}", a);  // ❌ エラー：可変借用がある間は不変借用を使えない
 
-// This prevents data races at compile time!
-// Python has no equivalent — it's why Python dict modified-during-iteration crashes at runtime.
+// これによりデータ競合をコンパイル時に防げる！
+// Pythonには同等の仕組みがない。そのため、反復中にPythonのdictを変更すると実行時にエラーになる。
 ```
 
-### Lifetimes — A Brief Introduction
+### ライフタイム — 簡単な紹介
 ```rust
-// Lifetimes answer: "How long does this reference live?"
-// Usually the compiler infers them. You rarely write them explicitly.
+// ライフタイムが答える問い：「この参照はどれくらいの期間有効か？」
+// 通常はコンパイラーが推論する。明示的に書く機会はほとんどない。
 
-// Simple case — compiler handles it:
+// 単純なケース — コンパイラーが処理する：
 fn first_word(s: &str) -> &str {
     s.split_whitespace().next().unwrap_or("")
 }
-// The compiler knows: the returned &str lives as long as the input &str
+// コンパイラーは、返される&strが入力の&strと同じ期間有効だと判断する
 
-// When you need explicit lifetimes (rare):
+// ライフタイムを明示する必要がある場合（まれ）：
 fn longest<'a>(a: &'a str, b: &'a str) -> &'a str {
     if a.len() > b.len() { a } else { b }
 }
-// 'a says: "the return value lives as long as both inputs"
+// 'aは「戻り値は両方の入力と同じ期間有効」と示す
 ```
 
-> **For Python developers**: Don't worry about lifetimes initially. The compiler will
-> tell you when you need them, and 95% of the time it infers them automatically.
-> Think of lifetime annotations as hints you give the compiler when it can't figure
-> out the relationships on its own.
+> **Python開発者へ**：最初はライフタイムを心配しなくて大丈夫です。必要なときはコンパイラーが教えてくれますし、95%のケースでは自動推論されます。
+> ライフタイム注釈は、参照同士の関係をコンパイラーが判断できないときに、その手掛かりを与えるものだと考えてください。
 
 ***
 
-## Smart Pointers
+## スマートポインター
 
-For cases where single ownership is too restrictive, Rust provides smart pointers.
-These are closer to Python's reference model — but explicit and opt-in.
+単一の所有権では制約が強すぎる場合に備え、Rustにはスマートポインターがあります。
+Pythonの参照モデルに近いものですが、明示的に選択して使います。
 
 ```rust
-// Box<T> — heap allocation with single owner (like Python's normal allocation)
-let boxed = Box::new(42);  // Heap-allocated i32
+// Box<T> — 単一所有者によるヒープ確保（Pythonの通常の確保に近い）
+let boxed = Box::new(42);  // ヒープ上に確保されたi32
 
-// Rc<T> — reference counted (like Python's refcount!)
+// Rc<T> — 参照カウント方式（Pythonの参照カウントに似ている！）
 use std::rc::Rc;
 let shared = Rc::new(vec![1, 2, 3]);
-let clone1 = Rc::clone(&shared);  // Increment refcount
-let clone2 = Rc::clone(&shared);  // Increment refcount
-// All three point to the same Vec. When all are dropped, Vec is freed.
-// Similar to Python's reference counting, but Rc does NOT handle cycles —
-// use Weak<T> to break cycles (Python's GC handles cycles automatically)
+let clone1 = Rc::clone(&shared);  // 参照カウントを増やす
+let clone2 = Rc::clone(&shared);  // 参照カウントを増やす
+// 3つとも同じVecを指す。すべてがドロップされるとVecが解放される。
+// Pythonの参照カウントに似ているが、Rcは循環参照を処理しない。
+// Weak<T>で循環を断つ（PythonのGCは循環参照を自動処理する）
 
-// Arc<T> — atomic reference counting (Rc for multi-threaded code)
+// Arc<T> — アトミックな参照カウント（マルチスレッド向けのRc）
 use std::sync::Arc;
 let thread_safe = Arc::new(vec![1, 2, 3]);
-// Use Arc when sharing across threads (Rc is single-threaded)
+// スレッド間で共有する場合はArcを使う（Rcは単一スレッド用）
 
-// RefCell<T> — runtime borrow checking (like Python's "anything goes" model)
+// RefCell<T> — 実行時の借用チェック（Pythonの「何でもあり」モデルに近い）
 use std::cell::RefCell;
 let cell = RefCell::new(42);
-*cell.borrow_mut() = 99;  // Mutable borrow at runtime (panics if double-borrowed)
+*cell.borrow_mut() = 99;  // 実行時に可変借用（借用が重複するとパニック）
 ```
 
-### When to Use Each
+### 使い分け
 
-| Smart Pointer | Python Analogy | Use Case |
+| スマートポインター | Pythonでの類似物 | 用途 |
 |---------------|----------------|----------|
-| `Box<T>` | Normal allocation | Large data, recursive types, trait objects |
-| `Rc<T>` | Python's default refcount | Shared ownership, single-threaded |
-| `Arc<T>` | Thread-safe refcount | Shared ownership, multi-threaded |
-| `RefCell<T>` | Python's "just mutate it" | Interior mutability (escape hatch) |
-| `Rc<RefCell<T>>` | Python's normal object model | Shared + mutable (graph structures) |
+| `Box<T>` | 通常のメモリー確保 | 大きなデータ、再帰型、トレイトオブジェクト |
+| `Rc<T>` | Pythonの標準的な参照カウント | 共有所有権、単一スレッド |
+| `Arc<T>` | スレッドセーフな参照カウント | 共有所有権、マルチスレッド |
+| `RefCell<T>` | Pythonの「そのまま変更」 | 内部可変性（例外的な手段） |
+| `Rc<RefCell<T>>` | Pythonの通常のオブジェクトモデル | 共有 + 可変（グラフ構造） |
 
-> **Key insight**: `Rc<RefCell<T>>` gives you Python-like semantics (shared, mutable data)
-> but you have to opt in explicitly. Rust's default (owned, moved) is faster and avoids
-> the overhead of reference counting. For graph-like structures with cycles, use `Weak<T>`
-> to break reference loops — unlike Python, Rust's `Rc` has no cycle collector.
+> **重要なポイント**：`Rc<RefCell<T>>`を使うとPythonに似た意味論（共有可能で変更可能なデータ）を得られますが、明示的に選ぶ必要があります。Rustの標準（所有してムーブする方式）はより高速で、参照カウントのオーバーヘッドもありません。循環を含むグラフ状の構造では、Pythonと異なりRustの`Rc`には循環参照コレクターがないため、`Weak<T>`で参照ループを断ちます。
 
-> 📌 **See also**: [Ch. 13 — Concurrency](ch13-concurrency.md) covers `Arc<Mutex<T>>` for multi-threaded shared state.
+> 📌 **関連項目**：[第13章 — 並行性](ch13-concurrency.md)では、マルチスレッドで状態を共有するための`Arc<Mutex<T>>`を扱います。
 
 ---
 
-## Exercises
+## 練習問題
 
 <details>
-<summary><strong>🏋️ Exercise: Spot the Borrow Checker Error</strong> (click to expand)</summary>
+<summary><strong>🏋️ 練習問題：借用チェッカーのエラーを見つける</strong>（クリックして展開）</summary>
 
-**Challenge**: The following code has 3 borrow checker errors. Identify each one and fix them without using `.clone()`:
+**課題**：次のコードには借用チェッカーのエラーが3つあります。それぞれを特定し、`.clone()`を使わずに修正してください。
 
 ```rust
 fn main() {
@@ -331,32 +326,30 @@ fn make_greeting(name: String) -> String {
 ```
 
 <details>
-<summary>🔑 Solution</summary>
+<summary>🔑 解答</summary>
 
 ```rust
 fn main() {
     let mut names = vec!["Alice".to_string(), "Bob".to_string()];
     let first = &names[0];
-    println!("First: {first}"); // Use borrow BEFORE mutating
-    names.push("Charlie".to_string()); // Now safe — no live immutable borrow
+    println!("First: {first}"); // 変更する前に借用を使う
+    names.push("Charlie".to_string()); // 不変借用が有効でないため、これで安全
 
-    let greeting = make_greeting(&names[0]); // Pass reference, not owned
+    let greeting = make_greeting(&names[0]); // 所有権ではなく参照を渡す
     println!("{greeting}");
 }
 
-fn make_greeting(name: &str) -> String { // Accept &str, not String
+fn make_greeting(name: &str) -> String { // Stringではなく&strを受け取る
     format!("Hello, {name}!")
 }
 ```
 
-**Errors fixed**:
-1. **Immutable borrow + mutation**: `first` borrows `names`, then `push` mutates it. Fix: use `first` before pushing.
-2. **Move out of Vec**: `names[0]` tries to move a String out of Vec (not allowed). Fix: borrow with `&names[0]`.
-3. **Function takes ownership**: `make_greeting(String)` consumes the value. Fix: take `&str` instead.
+**修正したエラー**：
+1. **不変借用と変更の競合**：`first`が`names`を借用したまま、`push`で変更しようとしています。修正：追加する前に`first`を使います。
+2. **Vecからのムーブ**：`names[0]`でStringをVecからムーブしようとしています（許可されません）。修正：`&names[0]`で借用します。
+3. **関数による所有権の取得**：`make_greeting(String)`は値を消費します。修正：代わりに`&str`を受け取ります。
 
 </details>
 </details>
 
 ***
-
-

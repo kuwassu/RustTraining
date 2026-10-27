@@ -5,48 +5,48 @@ use std::net::TcpListener;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-/// (slug, title, description, category)
+/// (スラッグ、タイトル、説明、カテゴリ)
 const BOOKS: &[(&str, &str, &str, &str)] = &[
     (
         "c-cpp-book",
-        "Rust for C/C++ Programmers",
-        "Move semantics, RAII, FFI, embedded, no_std",
+        "C/C++プログラマーのためのRust",
+        "ムーブセマンティクス、RAII、FFI、組み込み、no_std",
         "bridge",
     ),
     (
         "csharp-book",
-        "Rust for C# Programmers",
-        "Best for Swift / C# / Java developers",
+        "C#プログラマーのためのRust",
+        "Swift / C# / Javaの開発者に最適",
         "bridge",
     ),
     (
         "python-book",
-        "Rust for Python Programmers",
-        "Dynamic → static typing, GIL-free concurrency",
+        "PythonプログラマーのためのRust",
+        "動的型付けから静的型付けへ、GILに依存しない並行処理",
         "bridge",
     ),
     (
         "async-book",
-        "Async Rust: From Futures to Production",
-        "Tokio, streams, cancellation safety",
+        "Async Rust：Futureから本番環境まで",
+        "Tokio、ストリーム、キャンセル安全性",
         "deep-dive",
     ),
     (
         "rust-patterns-book",
         "Rust Patterns",
-        "Pin, allocators, lock-free structures, unsafe",
+        "Pin、アロケーター、ロックフリー構造、unsafe",
         "advanced",
     ),
     (
         "type-driven-correctness-book",
         "Type-Driven Correctness",
-        "Type-state, phantom types, capability tokens",
+        "型状態、ファントム型、ケイパビリティトークン",
         "expert",
     ),
     (
         "engineering-book",
         "Rust Engineering Practices",
-        "Build scripts, cross-compilation, coverage, CI/CD",
+        "ビルドスクリプト、クロスコンパイル、カバレッジ、CI/CD",
         "practices",
     ),
 ];
@@ -54,7 +54,7 @@ const BOOKS: &[(&str, &str, &str, &str)] = &[
 fn project_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
-        .expect("xtask must live in a workspace subdirectory")
+        .expect("xtaskはワークスペースのサブディレクトリに配置してください")
         .to_path_buf()
 }
 
@@ -70,7 +70,7 @@ fn main() {
         Some("clean") => cmd_clean(),
         Some("--help" | "-h" | "help") | None => print_usage(0),
         Some(other) => {
-            eprintln!("Unknown command: {other}\n");
+            eprintln!("不明なコマンドです: {other}\n");
             print_usage(1);
         }
     }
@@ -85,22 +85,22 @@ fn print_usage(code: i32) {
     let _ = writeln!(
         stream,
         "\
-Usage: cargo xtask <COMMAND>
+使い方: cargo xtask <コマンド>
 
-Commands:
-  build    Build all books into site/ (for local preview)
-  serve    Build and serve at http://localhost:3000
-  deploy   Build all books into docs/ (for GitHub Pages)
-  clean    Remove site/ and docs/ directories"
+コマンド:
+  build    すべての書籍をsite/にビルド（ローカルプレビュー用）
+  serve    ビルドしてhttp://localhost:3000で配信
+  deploy   すべての書籍をdocs/にビルド（GitHub Pages用）
+  clean    site/とdocs/ディレクトリを削除"
     );
     std::process::exit(code);
 }
 
-// ── build ────────────────────────────────────────────────────────────
+// ── ビルド ───────────────────────────────────────────────────────────
 
 fn cmd_build() {
     if !check_mdbook() {
-        eprintln!("Error: 'mdbook' not found in PATH. Please install it: https://rust-lang.github.io/mdbook/guide/installation.html");
+        eprintln!("エラー: PATHに'mdbook'が見つかりません。インストールしてください: https://rust-lang.github.io/mdbook/guide/installation.html");
         std::process::exit(1);
     }
     build_to("site");
@@ -108,11 +108,11 @@ fn cmd_build() {
 
 fn cmd_deploy() {
     if !check_mdbook() {
-        eprintln!("Error: 'mdbook' not found in PATH.");
+        eprintln!("エラー: PATHに'mdbook'が見つかりません。");
         std::process::exit(1);
     }
     build_to("docs");
-    println!("\nTo publish, commit docs/ and enable GitHub Pages → \"Deploy from a branch\" → /docs.");
+    println!("\n公開するには、docs/をコミットし、GitHub Pagesで「Deploy from a branch」→「/docs」を選択してください。");
 }
 
 fn check_mdbook() -> bool {
@@ -130,17 +130,17 @@ fn build_to(dir_name: &str) {
     let out = root.join(dir_name);
 
     if out.exists() {
-        fs::remove_dir_all(&out).expect("failed to clean output dir");
+        fs::remove_dir_all(&out).expect("出力ディレクトリのクリーンアップに失敗しました");
     }
-    fs::create_dir_all(&out).expect("failed to create output dir");
+    fs::create_dir_all(&out).expect("出力ディレクトリの作成に失敗しました");
 
-    println!("Building unified site into {dir_name}/\n");
+    println!("統合サイトを{dir_name}/にビルドしています。\n");
 
     let mut ok = 0u32;
     for &(slug, _, _, _) in BOOKS {
         let book_dir = root.join(slug);
         if !book_dir.is_dir() {
-            eprintln!("  ✗ {slug}/ not found, skipping");
+            eprintln!("  ✗ {slug}/が見つからないため、スキップします");
             continue;
         }
         let dest = out.join(slug);
@@ -149,31 +149,31 @@ fn build_to(dir_name: &str) {
             .arg(&dest)
             .current_dir(&book_dir)
             .status()
-            .expect("failed to run mdbook — is it installed?");
+            .expect("mdbookの実行に失敗しました。インストールされていますか？");
 
         if status.success() {
             println!("  ✓ {slug}");
             ok += 1;
         } else {
-            eprintln!("  ✗ {slug} FAILED");
+            eprintln!("  ✗ {slug} ビルド失敗");
         }
     }
-    println!("\n  {ok}/{} books built", BOOKS.len());
+    println!("\n  書籍のビルド数: {}/{}", ok, BOOKS.len());
 
     write_landing_page(&out);
 
-    // Prevent GitHub Pages from processing the output with Jekyll
-    fs::write(out.join(".nojekyll"), "").expect("failed to create .nojekyll");
-    println!("\nDone! Output in {dir_name}/");
+    // GitHub Pagesが出力をJekyllで処理しないようにする
+    fs::write(out.join(".nojekyll"), "").expect(".nojekyllの作成に失敗しました");
+    println!("\n完了しました。出力先: {dir_name}/");
 }
 
 fn category_label(cat: &str) -> &str {
     match cat {
-        "bridge" => "Bridge",
-        "deep-dive" => "Deep Dive",
-        "advanced" => "Advanced",
-        "expert" => "Expert",
-        "practices" => "Practices",
+        "bridge" => "入門",
+        "deep-dive" => "詳解",
+        "advanced" => "応用",
+        "expert" => "上級",
+        "practices" => "実践",
         _ => cat,
     }
 }
@@ -195,11 +195,11 @@ fn write_landing_page(site: &Path) {
 
     let html = format!(
         r##"<!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Rust Training Books</title>
+  <title>Rustトレーニングブック</title>
   <style>
     :root {{
       --bg: #1a1a2e;
@@ -285,28 +285,28 @@ fn write_landing_page(site: &Path) {
   </style>
 </head>
 <body>
-  <h1>🦀 <span>Rust</span> Training Books</h1>
-  <p class="subtitle">Pick the guide that matches your background</p>
+  <h1>🦀 <span>Rust</span>トレーニングブック</h1>
+  <p class="subtitle">ご自身の経験に合ったガイドをお選びください</p>
 
   <div class="legend">
-    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-bridge)"></span> Bridge &mdash; learn Rust from another language</span>
-    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-deep-dive)"></span> Deep Dive</span>
-    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-advanced)"></span> Advanced</span>
-    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-expert)"></span> Expert</span>
-    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-practices)"></span> Practices</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-bridge)"></span> 入門 &mdash; 他の言語からRustを学ぶ</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-deep-dive)"></span> 詳解</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-advanced)"></span> 応用</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-expert)"></span> 上級</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--clr-practices)"></span> 実践</span>
   </div>
 
   <div class="grid">
 {cards}
   </div>
-  <footer>Built with <a href="https://rust-lang.github.io/mdBook/" style="color:var(--accent)">mdBook</a></footer>
+  <footer><a href="https://rust-lang.github.io/mdBook/" style="color:var(--accent)">mdBook</a>で作成</footer>
 </body>
 </html>
 "##
     );
 
     let path = site.join("index.html");
-    fs::write(&path, html).expect("failed to write index.html");
+    fs::write(&path, html).expect("index.htmlの書き込みに失敗しました");
     println!("  ✓ index.html");
 }
 
@@ -316,15 +316,15 @@ enum ResolveResult {
     NotFound,
 }
 
-/// Resolve `request_target` (HTTP request path, e.g. `/foo/bar?x=1`) to a file under `site_canon`.
-/// Returns `ResolveResult::File` for success, `Redirect` if a trailing slash is needed for a directory,
-/// or `NotFound` for traversal attempts or missing files.
+/// `request_target`（例: `/foo/bar?x=1`のようなHTTPリクエストパス）を`site_canon`配下のファイルに解決する。
+/// 成功時は`ResolveResult::File`、ディレクトリに末尾のスラッシュが必要な場合は`Redirect`、
+/// パストラバーサルの試行またはファイルが見つからない場合は`NotFound`を返す。
 ///
-/// NOTE: This function preserves and hardens the multi-layer security from PR#18:
-/// 1. Percent-decoding via `percent_decode_path`.
-/// 2. Null byte rejection.
-/// 3. Traversal blocking (`..`).
-/// 4. Symlink escape prevention via canonicalization and prefix checking.
+/// 注意: PR#18で導入された多層防御を維持し、さらに強化している。
+/// 1. `percent_decode_path`によるパーセントデコード。
+/// 2. NULバイトの拒否。
+/// 3. パストラバーサル（`..`）の防止。
+/// 4. 正規化とプレフィックス検証によるシンボリックリンク経由の脱出防止。
 fn resolve_site_file(site_canon: &Path, request_target: &str) -> ResolveResult {
     let path_only = match request_target
         .split('?')
@@ -335,7 +335,7 @@ fn resolve_site_file(site_canon: &Path, request_target: &str) -> ResolveResult {
         None => return ResolveResult::NotFound,
     };
 
-    // [Security] Handle percent-encoding and reject null bytes (from PR#18)
+    // [セキュリティ] パーセントエンコーディングを処理し、NULバイトを拒否する（PR#18より）
     let decoded = percent_decode_path(path_only);
     if decoded.as_bytes().contains(&0) {
         return ResolveResult::NotFound;
@@ -345,7 +345,7 @@ fn resolve_site_file(site_canon: &Path, request_target: &str) -> ResolveResult {
     let mut file_path = site_canon.to_path_buf();
     if !rel.is_empty() {
         for seg in rel.split('/').filter(|s| !s.is_empty()) {
-            // [Security] Block directory traversal (from PR#18)
+            // [セキュリティ] ディレクトリトラバーサルを防止する（PR#18より）
             if seg == ".." {
                 return ResolveResult::NotFound;
             }
@@ -354,14 +354,14 @@ fn resolve_site_file(site_canon: &Path, request_target: &str) -> ResolveResult {
     }
 
     if file_path.is_dir() {
-        // If it refers to a directory but lacks a trailing slash, redirect so relative links work.
+        // ディレクトリを指していて末尾にスラッシュがない場合、相対リンクが機能するようリダイレクトする。
         if !request_target.ends_with('/') && !request_target.is_empty() {
             return ResolveResult::Redirect(format!("{path_only}/"));
         }
         file_path.push("index.html");
     }
 
-    // [Security] Canonicalize and verify we're still within site_canon (from PR#18)
+    // [セキュリティ] パスを正規化し、引き続きsite_canon配下にあることを確認する（PR#18より）
     let real = match fs::canonicalize(&file_path) {
         Ok(r) => r,
         Err(_) => return ResolveResult::NotFound,
@@ -401,20 +401,20 @@ fn percent_decode_path(input: &str) -> String {
     String::from_utf8_lossy(&decoded).into_owned()
 }
 
-// ── serve ────────────────────────────────────────────────────────────
+// ── 配信 ─────────────────────────────────────────────────────────────
 
 fn cmd_serve() {
     let site = project_root().join("site");
     let site_canon = fs::canonicalize(&site).expect(
-        "site/ not found — run `cargo xtask build` first (e.g. `cargo xtask serve` runs build automatically)",
+        "site/が見つかりません。先に`cargo xtask build`を実行してください（`cargo xtask serve`ではビルドも自動実行されます）。",
     );
     let addr = "127.0.0.1:3000";
-    let listener = TcpListener::bind(addr).expect("failed to bind port 3000");
+    let listener = TcpListener::bind(addr).expect("ポート3000のバインドに失敗しました");
 
-    // Handle Ctrl+C gracefully so cargo doesn't report an error
+    // Ctrl+Cで正常終了し、cargoがエラーを報告しないようにする
     ctrlc_exit();
 
-    println!("\nServing at http://localhost:3000  (Ctrl+C to stop)");
+    println!("\nhttp://localhost:3000 で配信中です（終了するにはCtrl+Cを押してください）");
 
     for stream in listener.incoming() {
         let Ok(mut stream) = stream else { continue };
@@ -458,13 +458,12 @@ fn cmd_serve() {
     }
 }
 
-/// Install a Ctrl+C handler that exits cleanly (code 0) instead of
-/// letting the OS terminate with STATUS_CONTROL_C_EXIT.
+/// OSに`STATUS_CONTROL_C_EXIT`で終了させず、正常終了コード（0）で終了するCtrl+Cハンドラーを設定する。
 fn ctrlc_exit() {
     ctrlc::set_handler(move || {
         std::process::exit(0);
     })
-    .expect("Error setting Ctrl-C handler");
+    .expect("Ctrl+Cハンドラーの設定に失敗しました");
 }
 
 fn guess_mime(path: &Path) -> &'static str {
@@ -482,15 +481,15 @@ fn guess_mime(path: &Path) -> &'static str {
     }
 }
 
-// ── clean ────────────────────────────────────────────────────────────
+// ── クリーンアップ ────────────────────────────────────────────────────
 
 fn cmd_clean() {
     let root = project_root();
     for dir_name in ["site", "docs"] {
         let dir = root.join(dir_name);
         if dir.exists() {
-            fs::remove_dir_all(&dir).expect("failed to remove dir");
-            println!("Removed {dir_name}/");
+            fs::remove_dir_all(&dir).expect("ディレクトリの削除に失敗しました");
+            println!("{dir_name}/を削除しました");
         }
     }
 }

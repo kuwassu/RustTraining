@@ -1,13 +1,14 @@
-## Common Python Patterns in Rust
+<a id="common-python-patterns-in-rust"></a>
+## Rustでの一般的なPythonパターン
 
-> **What you'll learn:** How to translate dict→struct, class→struct+impl, list comprehension→iterator chain,
-> decorator→trait, and context manager→Drop/RAII. Plus essential crates and an incremental adoption strategy.
+> **学習内容：** dictからstruct、classからstruct+impl、リスト内包表記からイテレーターチェーン、
+> デコレーターからトレイト、コンテキストマネージャーからDrop/RAIIへの置き換え方。さらに、必須クレートと段階的な導入方法も学びます。
 >
-> **Difficulty:** 🟡 Intermediate
+> **難易度：** 🟡 中級
 
-### Dictionary → Struct
+### 辞書から構造体へ
 ```python
-# Python — dict as data container (very common)
+# Python — データコンテナーとしてのdict（よく使われる）
 user = {
     "name": "Alice",
     "age": 30,
@@ -18,7 +19,7 @@ print(user["name"])
 ```
 
 ```rust
-// Rust — struct with named fields
+// Rust — 名前付きフィールドを持つstruct
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct User {
     name: String,
@@ -36,9 +37,9 @@ let user = User {
 println!("{}", user.name);
 ```
 
-### Context Manager → RAII (Drop)
+### コンテキストマネージャーからRAII（Drop）へ
 ```python
-# Python — context manager for resource cleanup
+# Python — リソース解放に使うコンテキストマネージャー
 class FileManager:
     def __init__(self, path):
         self.file = open(path, 'w')
@@ -51,11 +52,11 @@ class FileManager:
 
 with FileManager("output.txt") as f:
     f.write("hello")
-# File automatically closed when exiting `with`
+# `with`を抜けるとファイルが自動的に閉じられる
 ```
 
 ```rust
-// Rust — RAII: Drop trait runs when value goes out of scope
+// Rust — RAII：値がスコープを抜けるとDropトレイトが実行される
 use std::fs::File;
 use std::io::Write;
 
@@ -63,14 +64,14 @@ fn write_file() -> std::io::Result<()> {
     let mut file = File::create("output.txt")?;
     file.write_all(b"hello")?;
     Ok(())
-    // File automatically closed when `file` goes out of scope
-    // No `with` needed — RAII handles it!
+    // `file`がスコープを抜けるとファイルは自動的に閉じられる
+    // `with`は不要 — RAIIが処理する！
 }
 ```
 
-### Decorator → Higher-Order Function or Macro
+### デコレーターから高階関数またはマクロへ
 ```python
-# Python — decorator for timing
+# Python — 実行時間を計測するデコレーター
 import functools, time
 
 def timed(func):
@@ -89,7 +90,7 @@ def slow_function():
 ```
 
 ```rust
-// Rust — no decorators, use wrapper functions or macros
+// Rust — デコレーターはないため、ラッパー関数またはマクロを使う
 use std::time::Instant;
 
 fn timed<F, R>(name: &str, f: F) -> R
@@ -102,16 +103,16 @@ where
     result
 }
 
-// Usage:
+// 使用例：
 let result = timed("slow_function", || {
     std::thread::sleep(std::time::Duration::from_secs(1));
     42
 });
 ```
 
-### Iterator Pipeline (Data Processing)
+### イテレーターパイプライン（データ処理）
 ```python
-# Python — chain of transformations
+# Python — 変換処理を連鎖させる
 import csv
 from collections import Counter
 
@@ -128,7 +129,7 @@ def analyze_sales(filename):
 ```
 
 ```rust
-// Rust — iterator chains with strong types
+// Rust — 強い型付けを備えたイテレーターチェーン
 use std::collections::HashMap;
 
 #[derive(Debug, serde::Deserialize)]
@@ -155,9 +156,9 @@ fn analyze_sales(filename: &str) -> Vec<(String, usize)> {
 }
 ```
 
-### Global Config / Singleton
+### グローバル設定／シングルトン
 ```python
-# Python — module-level singleton (common pattern)
+# Python — モジュールレベルのシングルトン（よく使われるパターン）
 # config.py
 import json
 
@@ -171,11 +172,11 @@ class Config:
                 cls._instance.data = json.load(f)
         return cls._instance
 
-config = Config()  # Module-level singleton
+config = Config()  # モジュールレベルのシングルトン
 ```
 
 ```rust
-// Rust — OnceLock for lazy static initialization (Rust 1.70+)
+// Rust — 遅延static初期化にはOnceLockを使う（Rust 1.70以降）
 use std::sync::OnceLock;
 use serde_json::Value;
 
@@ -190,74 +191,75 @@ fn get_config() -> &'static Value {
     })
 }
 
-// Usage anywhere:
+// どこからでも使用できる：
 let db_host = get_config()["database"]["host"].as_str().unwrap();
 ```
 
 ***
 
-## Essential Crates for Python Developers
+## Python開発者に必須のクレート
 
-### Data Processing & Serialization
+### データ処理とシリアライズ
 
-| Task | Python | Rust Crate | Notes |
+| 用途 | Python | Rustクレート | 説明 |
 |------|--------|-----------|-------|
-| JSON | `json` | `serde_json` | Type-safe serialization |
-| CSV | `csv`, `pandas` | `csv` | Streaming, low memory |
-| YAML | `pyyaml` | `serde_yaml` | Config files |
-| TOML | `tomllib` | `toml` | Config files |
-| Data validation | `pydantic` | `serde` + custom | Compile-time validation |
-| Date/time | `datetime` | `chrono` | Full timezone support |
-| Regex | `re` | `regex` | Very fast |
-| UUID | `uuid` | `uuid` | Same concept |
+| JSON | `json` | `serde_json` | 型安全なシリアライズ |
+| CSV | `csv`、`pandas` | `csv` | ストリーミング、低メモリ |
+| YAML | `pyyaml` | `serde_yaml` | 設定ファイル |
+| TOML | `tomllib` | `toml` | 設定ファイル |
+| データ検証 | `pydantic` | `serde` + 独自実装 | コンパイル時の検証 |
+| 日時 | `datetime` | `chrono` | 完全なタイムゾーン対応 |
+| 正規表現 | `re` | `regex` | 非常に高速 |
+| UUID | `uuid` | `uuid` | 同じ概念 |
 
-### Web & Network
+### Webとネットワーク
 
-| Task | Python | Rust Crate | Notes |
+| 用途 | Python | Rustクレート | 説明 |
 |------|--------|-----------|-------|
-| HTTP client | `requests` | `reqwest` | Async-first |
-| Web framework | `FastAPI`/`Flask` | `axum` / `actix-web` | Very fast |
-| WebSocket | `websockets` | `tokio-tungstenite` | Async |
-| gRPC | `grpcio` | `tonic` | Full support |
-| Database (SQL) | `sqlalchemy` | `sqlx` / `diesel` | Compile-time checked SQL |
-| Redis | `redis-py` | `redis` | Async support |
+| HTTPクライアント | `requests` | `reqwest` | 非同期を優先 |
+| Webフレームワーク | `FastAPI`/`Flask` | `axum` / `actix-web` | 非常に高速 |
+| WebSocket | `websockets` | `tokio-tungstenite` | 非同期 |
+| gRPC | `grpcio` | `tonic` | 完全対応 |
+| データベース（SQL） | `sqlalchemy` | `sqlx` / `diesel` | SQLをコンパイル時に検査 |
+| Redis | `redis-py` | `redis` | 非同期対応 |
 
-### CLI & System
+### CLIとシステム
 
-| Task | Python | Rust Crate | Notes |
+| 用途 | Python | Rustクレート | 説明 |
 |------|--------|-----------|-------|
-| CLI args | `argparse`/`click` | `clap` | Derive macros |
-| Colored output | `colorama` | `colored` | Terminal colors |
-| Progress bar | `tqdm` | `indicatif` | Same UX |
-| File watching | `watchdog` | `notify` | Cross-platform |
-| Logging | `logging` | `tracing` | Structured, async-ready |
-| Env vars | `os.environ` | `std::env` + `dotenvy` | .env support |
-| Subprocess | `subprocess` | `std::process::Command` | Built-in |
-| Temp files | `tempfile` | `tempfile` | Same name! |
+| CLI引数 | `argparse`/`click` | `clap` | deriveマクロ |
+| 色付き出力 | `colorama` | `colored` | ターミナルの色 |
+| プログレスバー | `tqdm` | `indicatif` | 同じ使い勝手 |
+| ファイル監視 | `watchdog` | `notify` | クロスプラットフォーム |
+| ロギング | `logging` | `tracing` | 構造化、非同期対応 |
+| 環境変数 | `os.environ` | `std::env` + `dotenvy` | .env対応 |
+| サブプロセス | `subprocess` | `std::process::Command` | 組み込み |
+| 一時ファイル | `tempfile` | `tempfile` | 名前も同じ！ |
 
-### Testing
+### テスト
 
-| Task | Python | Rust Crate | Notes |
+| 用途 | Python | Rustクレート | 説明 |
 |------|--------|-----------|-------|
-| Test framework | `pytest` | Built-in + `rstest` | `cargo test` |
-| Mocking | `unittest.mock` | `mockall` | Trait-based |
-| Property testing | `hypothesis` | `proptest` | Similar API |
-| Snapshot testing | `syrupy` | `insta` | Snapshot approval |
-| Benchmarking | `pytest-benchmark` | `criterion` | Statistical |
-| Code coverage | `coverage.py` | `cargo-tarpaulin` | LLVM-based |
+| テストフレームワーク | `pytest` | 組み込み + `rstest` | `cargo test` |
+| モック | `unittest.mock` | `mockall` | トレイトベース |
+| プロパティテスト | `hypothesis` | `proptest` | 類似したAPI |
+| スナップショットテスト | `syrupy` | `insta` | スナップショットの承認 |
+| ベンチマーク | `pytest-benchmark` | `criterion` | 統計的分析 |
+| コードカバレッジ | `coverage.py` | `cargo-tarpaulin` | LLVMベース |
 
 ***
 
-## Incremental Adoption Strategy
+<a id="incremental-adoption-strategy"></a>
+## 段階的な導入戦略
 
 ```mermaid
 flowchart TB
-    A["1️⃣ Profile Python<br/>(find hotspots)"] --> B["2️⃣ Write Rust Extension<br/>(PyO3 + maturin)"]
-    B --> C["3️⃣ Replace Python Call<br/>(same API)"]
-    C --> D["4️⃣ Expand Gradually<br/>(more functions)"]
-    D --> E{"Full rewrite<br/>worth it?"}
-    E -->|Yes| F["Pure Rust🦀"]
-    E -->|No| G["Hybrid🐍+🦀"]
+    A["1️⃣ Pythonをプロファイリング<br/>（ボトルネックを特定）"] --> B["2️⃣ Rust拡張機能を作成<br/>（PyO3 + maturin）"]
+    B --> C["3️⃣ Pythonの呼び出しを置き換え<br/>（同じAPI）"]
+    C --> D["4️⃣ 段階的に拡張<br/>（対象関数を増やす）"]
+    D --> E{"全面的な書き換えに<br/>価値があるか？"}
+    E -->|はい| F["Rustのみ🦀"]
+    E -->|いいえ| G["ハイブリッド🐍+🦀"]
     style A fill:#ffeeba
     style B fill:#fff3cd
     style C fill:#d4edda
@@ -266,64 +268,64 @@ flowchart TB
     style G fill:#c3e6cb
 ```
 
-> 📌 **See also**: [Ch. 14 — Unsafe Rust and FFI](ch14-unsafe-rust-and-ffi.md) covers the low-level FFI details needed for PyO3 bindings.
+> 📌 **関連項目：** [第14章 — unsafeなRustとFFI](ch14-unsafe-rust-and-ffi.md)では、PyO3バインディングに必要な低レベルFFIの詳細を説明しています。
 
-### Step 1: Identify Hotspots
+### ステップ1：ボトルネックを特定する
 
 ```python
-# Profile your Python code first
+# まずPythonコードをプロファイリングする
 import cProfile
-cProfile.run('main()')  # Find the CPU-intensive functions
+cProfile.run('main()')  # CPU負荷の高い関数を見つける
 
-# Or use py-spy for sampling profiler:
+# またはサンプリングプロファイラーのpy-spyを使う：
 # py-spy top --pid <python-pid>
 # py-spy record -o profile.svg -- python main.py
 ```
 
-### Step 2: Write Rust Extension for Hotspot
+### ステップ2：ボトルネックをRust拡張機能に置き換える
 
 ```bash
-# Create a Rust extension with maturin
+# maturinでRust拡張機能を作成する
 cd my_python_project
 maturin init --bindings pyo3
 
-# Write the hot function in Rust (see PyO3 section above)
-# Build and install:
+# ボトルネックの関数をRustで書く（上のPyO3の節を参照）
+# ビルドしてインストール：
 maturin develop --release
 ```
 
-### Step 3: Replace Python Call with Rust Call
+### ステップ3：Pythonの呼び出しをRustの呼び出しに置き換える
 
 ```python
-# Before:
-result = python_hot_function(data)  # Slow
+# 変更前：
+result = python_hot_function(data)  # 遅い
 
-# After:
+# 変更後：
 import my_rust_extension
-result = my_rust_extension.hot_function(data)  # Fast!
+result = my_rust_extension.hot_function(data)  # 高速！
 
-# Same API, same tests, 10-100x faster
+# APIもテストも同じまま、10～100倍高速
 ```
 
-### Step 4: Expand Gradually
+### ステップ4：段階的に対象を広げる
 
 ```rust
-Week 1-2: Replace one CPU-bound function with Rust
-Week 3-4: Replace data parsing/validation layer
-Month 2:  Replace core data pipeline
-Month 3+: Consider full Rust rewrite if benefits justify it
+1～2週目：CPU負荷の高い関数を1つRustに置き換える
+3～4週目：データの解析・検証レイヤーを置き換える
+2か月目：中核となるデータパイプラインを置き換える
+3か月目以降：効果が見合えば、全面的なRustへの書き換えを検討する
 
-Key principle: keep Python for orchestration, use Rust for computation.
+基本原則：処理の制御にはPythonを残し、計算にはRustを使う。
 ```
 
 ---
 
-## 💼 Case Study: Accelerating a Data Pipeline with PyO3
+## 💼 ケーススタディ：PyO3によるデータパイプラインの高速化
 
-A fintech startup has a Python data pipeline that processes 2GB of daily transaction CSV files. The critical bottleneck is a validation + transformation step:
+あるフィンテックのスタートアップでは、毎日2GBの取引CSVファイルを処理するPythonデータパイプラインを運用しています。最大のボトルネックは検証と変換の処理です。
 
 ```python
-# Python — the slow part (~12 minutes for 2GB)
+# Python — 時間のかかる部分（2GBの処理に約12分）
 import csv
 from decimal import Decimal
 from datetime import datetime
@@ -333,12 +335,12 @@ def validate_and_transform(filepath: str) -> list[dict]:
     with open(filepath) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # Parse and validate each field
+            # 各フィールドを解析して検証する
             amount = Decimal(row["amount"])
             if amount < 0:
                 raise ValueError(f"Negative amount: {amount}")
             date = datetime.strptime(row["date"], "%Y-%m-%d")
-            category = categorize(row["merchant"])  # String matching, ~50 rules
+            category = categorize(row["merchant"])  # 文字列照合、約50個のルール
 
             results.append({
                 "amount_cents": int(amount * 100),
@@ -347,15 +349,15 @@ def validate_and_transform(filepath: str) -> list[dict]:
                 "merchant": row["merchant"].strip().lower(),
             })
     return results
-# ~12 minutes for 15M rows. Tried pandas — got to ~8 minutes but 6GB RAM.
+# 1500万行で約12分。pandasも試したが、約8分になった代わりにRAMを6GB使用した。
 ```
 
-**Step 1**: Profile and identify the hotspot (CSV parsing + Decimal conversion + string matching = 95% of time).
+**ステップ1：** プロファイリングでボトルネックを特定します（CSV解析、Decimal変換、文字列照合に処理時間の95%を費やしています）。
 
-**Step 2**: Write the Rust extension:
+**ステップ2：** Rust拡張機能を作成します。
 
 ```rust
-// src/lib.rs — PyO3 extension
+// src/lib.rs — PyO3拡張機能
 use pyo3::prelude::*;
 use pyo3::types::PyList;
 use std::fs::File;
@@ -370,7 +372,7 @@ struct Transaction {
 }
 
 fn categorize(merchant: &str) -> &'static str {
-    // Aho-Corasick or simple rules — compiled once, blazing fast
+    // Aho-Corasickまたは単純なルール — 一度コンパイルすれば非常に高速
     if merchant.contains("amazon") { "shopping" }
     else if merchant.contains("uber") || merchant.contains("lyft") { "transport" }
     else if merchant.contains("starbucks") { "food" }
@@ -382,13 +384,13 @@ fn process_transactions(path: &str) -> PyResult<Vec<(i64, String, String, String
     let file = File::open(path).map_err(|e| pyo3::exceptions::PyIOError::new_err(e.to_string()))?;
     let mut reader = csv::Reader::from_reader(BufReader::new(file));
 
-    let mut results = Vec::with_capacity(15_000_000); // Pre-allocate
+    let mut results = Vec::with_capacity(15_000_000); // あらかじめメモリを確保
 
     for record in reader.records() {
         let record = record.map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
         let amount_str = &record[0];
-        let amount_cents = parse_amount_cents(amount_str)?;  // Your custom parser (no Decimal needed)
-        let date = &record[1];  // Already in ISO format, just validate
+        let amount_cents = parse_amount_cents(amount_str)?;  // 独自パーサーを使う（Decimalは不要）
+        let date = &record[1];  // すでにISO形式なので検証のみ
         let merchant = record[2].trim().to_lowercase();
         let category = categorize(&merchant).to_string();
 
@@ -404,62 +406,60 @@ fn fast_pipeline(m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 ```
 
-**Step 3**: Replace one line in Python:
+**ステップ3：** Python側の1行を置き換えます。
 
 ```python
-# Before:
-results = validate_and_transform("transactions.csv")  # 12 minutes
+# 変更前：
+results = validate_and_transform("transactions.csv")  # 12分
 
-# After:
+# 変更後：
 import fast_pipeline
-results = fast_pipeline.process_transactions("transactions.csv")  # 45 seconds
+results = fast_pipeline.process_transactions("transactions.csv")  # 45秒
 
-# Same Python orchestration, same tests, same deployment
-# Just one function replaced
+# Python側の制御、テスト、デプロイ方法はそのまま
+# 置き換えたのは関数1つだけ
 ```
 
-**Results**:
-| Metric | Python (csv + Decimal) | Rust (PyO3 + csv crate) |
+**結果：**
+| 指標 | Python（csv + Decimal） | Rust（PyO3 + csvクレート） |
 |--------|----------------------|------------------------|
-| Time (2GB / 15M rows) | 12 minutes | 45 seconds |
-| Peak memory | 6GB (pandas) / 2GB (csv) | 200MB |
-| Lines changed in Python | — | 1 (import + call) |
-| Rust code written | — | ~60 lines |
-| Tests passing | 47/47 | 47/47 (unchanged) |
+| 処理時間（2GB／1500万行） | 12分 | 45秒 |
+| 最大メモリ使用量 | 6GB（pandas）／2GB（csv） | 200MB |
+| Pythonの変更行数 | — | 1行（importと呼び出し） |
+| Rustのコード量 | — | 約60行 |
+| テスト成功数 | 47/47 | 47/47（変更なし） |
 
-> **Key lesson**: You don't need to rewrite your whole application. Find the 5% of code that takes 95% of the time, rewrite that in Rust with PyO3, and keep everything else in Python. The team went from "we need to add more servers" to "one server is enough."
+> **重要な教訓：** アプリケーション全体を書き直す必要はありません。処理時間の95%を占めるコードの5%を見つけ、PyO3を使ってRustに書き換え、それ以外はPythonのままにします。このチームは「サーバーを増やさなければ」から「1台で十分」へと変わりました。
 
 ---
 
-## Exercises
+## 演習
 
 <details>
-<summary><strong>🏋️ Exercise: Migration Decision Matrix</strong> (click to expand)</summary>
+<summary><strong>🏋️ 演習：移行判断マトリックス</strong>（クリックして展開）</summary>
 
-**Challenge**: You have a Python web application with these components. For each one, decide: **Keep in Python**, **Rewrite in Rust**, or **PyO3 bridge**. Justify each choice.
+**課題：** 次のコンポーネントで構成されたPython製Webアプリケーションがあります。それぞれについて、**Pythonのままにする**、**Rustで書き直す**、**PyO3で橋渡しする**のいずれかを選び、理由を説明してください。
 
-1. Flask route handlers (request parsing, JSON responses)
-2. Image thumbnail generation (CPU-bound, processes 10k images/day)
-3. Database ORM queries (SQLAlchemy)
-4. CSV parser for 2GB financial files (runs nightly)
-5. Admin dashboard (Jinja2 templates)
+1. Flaskのルートハンドラー（リクエスト解析、JSON応答）
+2. 画像サムネイルの生成（CPU負荷が高く、1日1万枚を処理）
+3. データベースのORMクエリ（SQLAlchemy）
+4. 2GBの財務ファイル用CSVパーサー（毎晩実行）
+5. 管理ダッシュボード（Jinja2テンプレート）
 
 <details>
-<summary>🔑 Solution</summary>
+<summary>🔑 解答</summary>
 
-| Component | Decision | Rationale |
+| コンポーネント | 判断 | 理由 |
 |---|---|---|
-| Flask route handlers | 🐍 Keep Python | I/O-bound, framework-heavy, low benefit from Rust |
-| Image thumbnail generation | 🦀 PyO3 bridge | CPU-bound hot path, keep Python API, Rust internals |
-| Database ORM queries | 🐍 Keep Python | SQLAlchemy is mature, queries are I/O-bound |
-| CSV parser (2GB) | 🦀 PyO3 bridge or full Rust | CPU + memory bound, Rust's zero-copy parsing shines |
-| Admin dashboard | 🐍 Keep Python | UI/template code, no performance concern |
+| Flaskのルートハンドラー | 🐍 Pythonのまま | I/O中心でフレームワーク依存が強く、Rustにする利点が少ない |
+| 画像サムネイルの生成 | 🦀 PyO3で橋渡し | CPU負荷の高い処理をRustにしつつ、Python APIを維持できる |
+| データベースのORMクエリ | 🐍 Pythonのまま | SQLAlchemyは成熟しており、クエリはI/O中心 |
+| CSVパーサー（2GB） | 🦀 PyO3で橋渡し、または全面的にRust化 | CPUとメモリがボトルネックで、Rustのゼロコピー解析が効果的 |
+| 管理ダッシュボード | 🐍 Pythonのまま | UI／テンプレートのコードであり、性能上の懸念がない |
 
-**Key takeaway**: The migration sweet spot is CPU-bound, performance-critical code that has a clean boundary. Don't rewrite glue code or I/O-bound handlers — the gains don't justify the cost.
+**要点：** 移行に最適なのは、境界が明確で、CPU負荷が高く、性能が重要なコードです。接着コードやI/O中心のハンドラーは書き換えないでください。得られる効果がコストに見合いません。
 
 </details>
 </details>
 
 ***
-
-

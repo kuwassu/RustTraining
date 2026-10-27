@@ -12,6 +12,8 @@
 
 # Rust Training Books
 
+[日本語版](README.ja.md)
+
 Seven training courses covering Rust from different programming backgrounds, plus deep-dives on async, advanced patterns, and engineering practices.
 
 This material combines original content with ideas and examples inspired by some of the best resources in the Rust ecosystem. The goal is to present an in-depth, technically accurate curriculum that weaves together knowledge scattered across books, blogs, conference talks, and video series into a cohesive, pedagogically structured experience.
@@ -108,4 +110,3 @@ cd c-cpp-book && mdbook serve --open    # http://localhost:3000
 The site auto-deploys to GitHub Pages on push to `main` via `.github/workflows/pages.yml`. No manual steps needed.
 
 </details>
-

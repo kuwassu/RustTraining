@@ -1,22 +1,24 @@
-## Tuples and Destructuring
+<a id="tuples-and-destructuring"></a>
+## タプルと分配束縛
 
-> **What you'll learn:** Rust tuples vs Python tuples, arrays and slices, structs (Rust's replacement for classes),
-> `Vec<T>` vs `list`, `HashMap<K,V>` vs `dict`, and the newtype pattern for domain modeling.
+> **学習内容：** RustとPythonのタプル、配列とスライス、クラスに代わるRustの構造体、
+> `Vec<T>`と`list`、`HashMap<K,V>`と`dict`の比較、ドメインモデリングのためのnewtypeパターン。
 >
-> **Difficulty:** 🟢 Beginner
+> **難易度：** 🟢 初級
 
-### Python Tuples
+<a id="python-tuples"></a>
+### Pythonのタプル
 ```python
-# Python — tuples are immutable sequences
+# Python — タプルは不変のシーケンス
 point = (3.0, 4.0)
 x, y = point                    # Unpacking
 print(f"x={x}, y={y}")
 
-# Tuples can hold mixed types
+# タプルには異なる型の値を格納できる
 record = ("Alice", 30, True)
 name, age, active = record
 
-# Named tuples for clarity
+# 分かりやすさのための名前付きタプル
 from typing import NamedTuple
 
 class Point(NamedTuple):
@@ -27,75 +29,80 @@ p = Point(3.0, 4.0)
 print(p.x)                      # Named access
 ```
 
-### Rust Tuples
+<a id="rust-tuples"></a>
+### Rustのタプル
 ```rust
-// Rust — tuples are fixed-size, typed, can hold mixed types
+// Rust — タプルは固定サイズで型が決まっており、異なる型の値を格納できる
 let point: (f64, f64) = (3.0, 4.0);
 let (x, y) = point;              // Destructuring (same as Python unpacking)
 println!("x={x}, y={y}");
 
-// Mixed types
+// 異なる型の要素
 let record: (&str, i32, bool) = ("Alice", 30, true);
 let (name, age, active) = record;
 
-// Access by index (unlike Python, uses .0 .1 .2 syntax)
+// インデックスによるアクセス（Pythonと異なり、.0、.1、.2の構文を使う）
 let first = record.0;            // "Alice"
 let second = record.1;           // 30
 
-// Python: record[0]
-// Rust:   record.0      ← dot-index, not bracket-index
+// Python：record[0]
+// Rust：  record.0      ← 角括弧ではなくドットを使う
 ```
 
-### When to Use Tuples vs Structs
+<a id="when-to-use-tuples-vs-structs"></a>
+### タプルと構造体の使い分け
 ```rust
-// Tuples: quick grouping, function returns, temporary values
+// タプル：簡単なグループ化、関数の戻り値、一時的な値
 fn min_max(data: &[i32]) -> (i32, i32) {
     (*data.iter().min().unwrap(), *data.iter().max().unwrap())
 }
 let (lo, hi) = min_max(&[3, 1, 4, 1, 5]);
 
-// Structs: named fields, clear intent, methods
+// 構造体：名前付きフィールド、明確な意図、メソッド
 struct Point { x: f64, y: f64 }
 
-// Rule of thumb:
-// - 2-3 same-type fields → tuple is fine
-// - Named fields needed  → use struct
-// - Methods needed       → use struct
-// (Same guidance as Python: tuple vs namedtuple vs dataclass)
+// 目安：
+// - 同じ型のフィールドが2～3個 → タプルでよい
+// - 名前付きフィールドが必要 → 構造体を使う
+// - メソッドが必要 → 構造体を使う
+// （Pythonでタプル、namedtuple、dataclassを使い分けるときと同じ考え方）
 ```
 
 ***
 
-## Arrays and Slices
+<a id="arrays-and-slices"></a>
+## 配列とスライス
 
-### Python Lists vs Rust Arrays
+<a id="python-lists-vs-rust-arrays"></a>
+### PythonのリストとRustの配列の比較
 ```python
-# Python — lists are dynamic, heterogeneous
+# Python — リストは可変長で、異なる型の値を格納できる
 numbers = [1, 2, 3, 4, 5]       # Can grow, shrink, hold mixed types
 numbers.append(6)
 mixed = [1, "two", 3.0]         # Mixed types allowed
 ```
 
 ```rust
-// Rust has TWO fixed-size vs dynamic concepts:
+// Rustには固定サイズと可変長に関する概念が二つある：
 
-// 1. Array — fixed size, stack-allocated (no Python equivalent)
+// 1. 配列 — 固定サイズでスタックに確保（Pythonに相当するものはない）
 let numbers: [i32; 5] = [1, 2, 3, 4, 5]; // Size is part of the type!
-// numbers.push(6);  // ❌ Arrays can't grow
+// numbers.push(6);  // ❌ 配列のサイズは拡張できない
 
-// Initialize all elements to same value:
+// すべての要素を同じ値で初期化：
 let zeros = [0; 10];            // [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-// 2. Slice — a view into an array or Vec (like Python slicing, but borrowed)
+// 2. スライス — 配列やVecのビュー（Pythonのスライスに似ているが、借用される）
 let slice: &[i32] = &numbers[1..4]; // [2, 3, 4] — a reference, not a copy!
 
-// Python: numbers[1:4] creates a NEW list (copy)
-// Rust:   &numbers[1..4] creates a VIEW (no copy, no allocation)
+// Python：numbers[1:4]は新しいリストを作成する（コピー）
+// Rust：  &numbers[1..4]はビューを作成する（コピーもメモリー確保もない）
 ```
 
-### Practical Comparison
+<a id="practical-comparison"></a>
+### 実践的な比較
 ```python
-# Python slicing — creates copies
+# Pythonのスライス — コピーを作成
 data = [10, 20, 30, 40, 50]
 first_three = data[:3]          # New list: [10, 20, 30]
 last_two = data[-2:]            # New list: [40, 50]
@@ -103,25 +110,27 @@ reversed_data = data[::-1]      # New list: [50, 40, 30, 20, 10]
 ```
 
 ```rust
-// Rust slicing — creates views (references)
+// Rustのスライス — ビュー（参照）を作成
 let data = [10, 20, 30, 40, 50];
 let first_three = &data[..3];         // &[i32], view: [10, 20, 30]
 let last_two = &data[3..];            // &[i32], view: [40, 50]
 
-// No negative indexing — use .len()
+// 負のインデックスは使えない — .len()を使う
 let last_two = &data[data.len()-2..]; // &[i32], view: [40, 50]
 
-// Reverse: use an iterator
+// 逆順にするにはイテレーターを使う
 let reversed: Vec<i32> = data.iter().rev().copied().collect();
 ```
 
 ***
 
-## Structs vs Classes
+<a id="structs-vs-classes"></a>
+## 構造体とクラスの比較
 
-### Python Classes
+<a id="python-classes"></a>
+### Pythonのクラス
 ```python
-# Python — class with __init__, methods, properties
+# Python — __init__、メソッド、プロパティを持つクラス
 from dataclasses import dataclass
 
 @dataclass
@@ -146,9 +155,10 @@ print(r.area())         # 50.0
 print(r)                # Rectangle(10.0 x 5.0)
 ```
 
-### Rust Structs
+<a id="rust-structs"></a>
+### Rustの構造体
 ```rust
-// Rust — struct + impl blocks (no inheritance!)
+// Rust — structとimplブロックを使う（継承はない）
 #[derive(Debug, Clone)]
 struct Rectangle {
     width: f64,
@@ -156,7 +166,7 @@ struct Rectangle {
 }
 
 impl Rectangle {
-    // "Constructor" — associated function (no self)
+    // 「コンストラクター」— 関連関数（selfなし）
     fn new(width: f64, height: f64) -> Self {
         Rectangle { width, height }   // Field shorthand when names match
     }
@@ -174,7 +184,7 @@ impl Rectangle {
     }
 }
 
-// Display trait = Python's __str__
+// DisplayトレイトはPythonの__str__に相当
 impl std::fmt::Display for Rectangle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Rectangle({} x {})", self.width, self.height)
@@ -190,43 +200,46 @@ fn main() {
 
 ```mermaid
 flowchart LR
-    subgraph Python ["Python Object (Heap)"]
-        PH["PyObject Header<br/>(refcount + type ptr)"] --> PW["width: float obj"]
-        PH --> PHT["height: float obj"]
+    subgraph Python ["Pythonのオブジェクト（ヒープ）"]
+        PH["PyObjectヘッダー<br/>（参照カウント＋型ポインター）"] --> PW["width: floatオブジェクト"]
+        PH --> PHT["height: floatオブジェクト"]
         PH --> PD["__dict__"]
     end
     Python ~~~ Rust
-    subgraph Rust ["Rust Struct (Stack)"]
-        RW["width: f64<br/>(8 bytes)"] --- RH["height: f64<br/>(8 bytes)"]
+    subgraph Rust ["Rustの構造体（スタック）"]
+        RW["width: f64<br/>（8バイト）"] --- RH["height: f64<br/>（8バイト）"]
     end
     style Python fill:#ffeeba
     style Rust fill:#d4edda
 ```
 
-> **Memory insight**: A Python `Rectangle` object has a 56-byte header + separate heap-allocated float objects. A Rust `Rectangle` is exactly 16 bytes on the stack — no indirection, no GC pressure.
+> **メモリーに関するポイント：** Pythonの`Rectangle`オブジェクトには56バイトのヘッダーがあり、floatオブジェクトも別途ヒープに確保されます。
+> Rustの`Rectangle`はスタック上でちょうど16バイトです。間接参照がなく、GCへの負荷もありません。
 >
-> 📌 **See also**: [Ch. 10 — Traits and Generics](ch10-traits-and-generics.md) covers implementing traits like `Display`, `Debug`, and operator overloading for your structs.
+> 📌 **関連項目：** [第10章：トレイトとジェネリクス](ch10-traits-and-generics.md)では、`Display`や`Debug`などのトレイトの実装、構造体の演算子オーバーロードを扱います。
 
-### Key Mapping: Python Dunder Methods → Rust Traits
+<a id="key-mapping-python-dunder-methods-rust-traits"></a>
+### Pythonの特殊メソッドとRustのトレイトの対応表
 
-| Python | Rust | Purpose |
+| Python | Rust | 用途 |
 |--------|------|---------|
-| `__str__` | `impl Display` | Human-readable string |
-| `__repr__` | `#[derive(Debug)]` | Debug representation |
-| `__eq__` | `#[derive(PartialEq)]` | Equality comparison |
-| `__hash__` | `#[derive(Hash)]` | Hashable (for dict keys / HashSet) |
-| `__lt__`, `__le__`, etc. | `#[derive(PartialOrd, Ord)]` | Ordering |
-| `__add__` | `impl Add` | `+` operator |
-| `__iter__` | `impl Iterator` | Iteration |
-| `__len__` | `.len()` method | Length |
-| `__enter__`/`__exit__` | RAII + `impl Drop` | Automatic cleanup; no direct equivalent of context manager's two-phase protocol |
-| `__init__` | `fn new()` (convention) | Constructor |
-| `__getitem__` | `impl Index` | Indexing with `[]` |
-| `__contains__` | `.contains()` method | `in` operator |
+| `__str__` | `impl Display` | 人が読みやすい文字列 |
+| `__repr__` | `#[derive(Debug)]` | デバッグ用表現 |
+| `__eq__` | `#[derive(PartialEq)]` | 等価性の比較 |
+| `__hash__` | `#[derive(Hash)]` | ハッシュ可能（辞書のキーや`HashSet`に使用） |
+| `__lt__`、`__le__`など | `#[derive(PartialOrd, Ord)]` | 順序比較 |
+| `__add__` | `impl Add` | `+`演算子 |
+| `__iter__` | `impl Iterator` | 反復処理 |
+| `__len__` | `.len()`メソッド | 長さ |
+| `__enter__`/`__exit__` | RAII + `impl Drop` | 自動解放。コンテキストマネージャーの2段階プロトコルに直接対応するものはない |
+| `__init__` | `fn new()`（慣例） | コンストラクター |
+| `__getitem__` | `impl Index` | `[]`によるインデックスアクセス |
+| `__contains__` | `.contains()`メソッド | `in`演算子 |
 
-### No Inheritance — Composition Instead
+<a id="no-inheritance-composition-instead"></a>
+### 継承ではなくコンポジションを使う
 ```python
-# Python — inheritance
+# Python — 継承
 class Animal:
     def __init__(self, name: str):
         self.name = name
@@ -243,7 +256,7 @@ class Cat(Animal):
 ```
 
 ```rust
-// Rust — traits + composition (no inheritance)
+// Rust — トレイトとコンポジションを使う（継承はない）
 trait Animal {
     fn name(&self) -> &str;
     fn speak(&self) -> String;
@@ -266,7 +279,7 @@ impl Animal for Cat {
     }
 }
 
-// Use trait objects for polymorphism (like Python's duck typing):
+// 多相性にはトレイトオブジェクトを使う（Pythonのダックタイピングに似ている）：
 fn animal_roll_call(animals: &[&dyn Animal]) {
     for a in animals {
         println!("{}", a.speak());
@@ -274,16 +287,18 @@ fn animal_roll_call(animals: &[&dyn Animal]) {
 }
 ```
 
-> **Mental model**: Python says "inherit behavior". Rust says "implement contracts".
-> The result is similar, but Rust avoids the diamond problem and fragile base class issues.
+> **考え方：** Pythonでは「振る舞いを継承する」と考えますが、Rustでは「契約を実装する」と考えます。
+> 得られる結果は似ていますが、Rustではダイヤモンド問題や壊れやすい基底クラスの問題を避けられます。
 
 ***
 
-## Vec vs list
+<a id="vec-vs-list"></a>
+## `Vec`と`list`の比較
 
-`Vec<T>` is Rust's growable, heap-allocated array — the closest equivalent to Python's `list`.
+`Vec<T>`はRustの可変長ヒープ確保配列であり、Pythonの`list`に最も近い型です。
 
-### Creating Vectors
+<a id="creating-vectors"></a>
+### ベクターの作成
 ```python
 # Python
 numbers = [1, 2, 3]
@@ -300,9 +315,10 @@ let repeated = vec![0; 10];              // [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 let from_range: Vec<i32> = (1..6).collect(); // [1, 2, 3, 4, 5]
 ```
 
-### Common Operations
+<a id="common-operations"></a>
+### よく使う操作
 ```python
-# Python list operations
+# Pythonのリスト操作
 nums = [1, 2, 3]
 nums.append(4)                   # [1, 2, 3, 4]
 nums.extend([5, 6])             # [1, 2, 3, 4, 5, 6]
@@ -317,7 +333,7 @@ index = nums.index(3)          # Index of first 3
 ```
 
 ```rust
-// Rust Vec operations
+// RustのVec操作
 let mut nums = vec![1, 2, 3];
 nums.push(4);                          // [1, 2, 3, 4]
 nums.extend([5, 6]);                   // [1, 2, 3, 4, 5, 6]
@@ -332,31 +348,34 @@ let contains = nums.contains(&3);      // true
 let index = nums.iter().position(|&x| x == 3); // Some(index) or None
 ```
 
-### Quick Reference
+<a id="quick-reference"></a>
+### クイックリファレンス
 
-| Python | Rust | Notes |
+| Python | Rust | 備考 |
 |--------|------|-------|
 | `lst.append(x)` | `vec.push(x)` | |
 | `lst.extend(other)` | `vec.extend(other)` | |
-| `lst.pop()` | `vec.pop()` | Returns `Option<T>` |
+| `lst.pop()` | `vec.pop()` | `Option<T>`を返す |
 | `lst.insert(i, x)` | `vec.insert(i, x)` | |
-| `lst.remove(x)` | `vec.iter().position(\|v\| v == &x).map(\|i\| vec.remove(i))` | Removes first match only (use `retain` to remove all) |
-| `del lst[i]` | `vec.remove(i)` | Returns the removed element |
+| `lst.remove(x)` | `vec.iter().position(\|v\| v == &x).map(\|i\| vec.remove(i))` | 最初に一致した要素だけを削除（すべて削除するには`retain`を使う） |
+| `del lst[i]` | `vec.remove(i)` | 削除した要素を返す |
 | `len(lst)` | `vec.len()` | |
 | `x in lst` | `vec.contains(&x)` | |
 | `lst.sort()` | `vec.sort()` | |
-| `sorted(lst)` | Clone + sort, or iterator | |
-| `lst[i]` | `vec[i]` | Panics if out of bounds |
-| `lst.get(i, default)` | `vec.get(i)` | Returns `Option<&T>` |
-| `lst[1:3]` | `&vec[1..3]` | Returns a slice (no copy) |
+| `sorted(lst)` | 複製してソート、またはイテレーターを使用 | |
+| `lst[i]` | `vec[i]` | 範囲外の場合はpanicする |
+| `lst.get(i, default)` | `vec.get(i)` | `Option<&T>`を返す |
+| `lst[1:3]` | `&vec[1..3]` | スライスを返す（コピーなし） |
 
 ***
 
-## HashMap vs dict
+<a id="hashmap-vs-dict"></a>
+## `HashMap`と`dict`の比較
 
-`HashMap<K, V>` is Rust's hash map — equivalent to Python's `dict`.
+`HashMap<K, V>`はRustのハッシュマップで、Pythonの`dict`に相当します。
 
-### Creating HashMaps
+<a id="creating-hashmaps"></a>
+### ハッシュマップの作成
 ```python
 # Python
 scores = {"Alice": 100, "Bob": 85}
@@ -375,9 +394,10 @@ let from_pairs: HashMap<&str, i32> = [("x", 1), ("y", 2)].into_iter().collect();
 let comprehension: HashMap<_, _> = keys.iter().zip(values.iter()).collect();
 ```
 
-### Common Operations
+<a id="common-operations-1"></a>
+### よく使う操作
 ```python
-# Python dict operations
+# Pythonのdict操作
 d = {"a": 1, "b": 2}
 d["c"] = 3                      # Insert
 val = d["a"]                     # 1 (KeyError if missing)
@@ -397,7 +417,7 @@ for word in words:
 ```
 
 ```rust
-// Rust HashMap operations
+// RustのHashMap操作
 use std::collections::HashMap;
 
 let mut d = HashMap::new();
@@ -413,26 +433,27 @@ let keys: Vec<_> = d.keys().collect();
 let values: Vec<_> = d.values().collect();
 let length = d.len();
 
-// entry API = Python's setdefault / defaultdict pattern
+// entry APIはPythonのsetdefault / defaultdictパターンに相当
 let mut word_count: HashMap<&str, i32> = HashMap::new();
 for word in words {
     *word_count.entry(word).or_insert(0) += 1;
 }
 ```
 
-### Quick Reference
+<a id="quick-reference-1"></a>
+### クイックリファレンス
 
-| Python | Rust | Notes |
+| Python | Rust | 備考 |
 |--------|------|-------|
-| `d[key] = val` | `d.insert(key, val)` | Returns `Option<V>` (old value) |
-| `d[key]` | `d[&key]` | Panics if missing |
-| `d.get(key)` | `d.get(&key)` | Returns `Option<&V>` |
+| `d[key] = val` | `d.insert(key, val)` | 古い値を`Option<V>`で返す |
+| `d[key]` | `d[&key]` | キーがなければpanicする |
+| `d.get(key)` | `d.get(&key)` | `Option<&V>`を返す |
 | `d.get(key, default)` | `d.get(&key).unwrap_or(&default)` | |
 | `key in d` | `d.contains_key(&key)` | |
-| `del d[key]` | `d.remove(&key)` | Returns `Option<V>` |
-| `d.keys()` | `d.keys()` | Iterator |
-| `d.values()` | `d.values()` | Iterator |
-| `d.items()` | `d.iter()` | Iterator of `(&K, &V)` |
+| `del d[key]` | `d.remove(&key)` | `Option<V>`を返す |
+| `d.keys()` | `d.keys()` | イテレーター |
+| `d.values()` | `d.values()` | イテレーター |
+| `d.items()` | `d.iter()` | `(&K, &V)`のイテレーター |
 | `len(d)` | `d.len()` | |
 | `d.update(other)` | `d.extend(other)` | |
 | `defaultdict(int)` | `.entry().or_insert(0)` | Entry API |
@@ -440,27 +461,29 @@ for word in words {
 
 ***
 
-### Other Collections
+<a id="other-collections"></a>
+### その他のコレクション
 
-| Python | Rust | Notes |
+| Python | Rust | 備考 |
 |--------|------|-------|
 | `set()` | `HashSet<T>` | `use std::collections::HashSet;` |
 | `collections.deque` | `VecDeque<T>` | `use std::collections::VecDeque;` |
-| `heapq` | `BinaryHeap<T>` | Max-heap by default |
-| `collections.OrderedDict` | `IndexMap` (crate) | HashMap doesn't preserve order |
-| `sortedcontainers.SortedList` | `BTreeSet<T>` / `BTreeMap<K,V>` | Tree-based, sorted |
+| `heapq` | `BinaryHeap<T>` | デフォルトでは最大ヒープ |
+| `collections.OrderedDict` | `IndexMap`（クレート） | `HashMap`は順序を保持しない |
+| `sortedcontainers.SortedList` | `BTreeSet<T>` / `BTreeMap<K,V>` | 木構造で、ソート済み |
 
 ---
 
-## Exercises
+<a id="exercises"></a>
+## 練習問題
 
 <details>
-<summary><strong>🏋️ Exercise: Word Frequency Counter</strong> (click to expand)</summary>
+<summary><strong>🏋️ 練習問題：単語の出現頻度カウンター</strong>（クリックして展開）</summary>
 
-**Challenge**: Write a function that takes a `&str` sentence and returns a `HashMap<String, usize>` of word frequencies (case-insensitive). In Python this is `Counter(s.lower().split())`. Translate it to Rust.
+**課題：** `&str`型の文を受け取り、大文字と小文字を区別せずに単語の出現頻度を集計した`HashMap<String, usize>`を返す関数を書いてください。Pythonでは`Counter(s.lower().split())`に相当します。これをRustで実装してください。
 
 <details>
-<summary>🔑 Solution</summary>
+<summary>🔑 解答</summary>
 
 ```rust
 use std::collections::HashMap;
@@ -483,11 +506,9 @@ fn main() {
 }
 ```
 
-**Key takeaway**: `HashMap::entry().or_insert()` is Rust's equivalent of Python's `defaultdict` or `Counter`. The `*` dereference is needed because `or_insert` returns `&mut usize`.
+**要点：** `HashMap::entry().or_insert()`は、Pythonの`defaultdict`や`Counter`に相当します。`or_insert`は`&mut usize`を返すため、`*`によるデリファレンスが必要です。
 
 </details>
 </details>
 
 ***
-
-

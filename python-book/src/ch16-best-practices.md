@@ -1,16 +1,17 @@
-## Idiomatic Rust for Python Developers
+<a id="idiomatic-rust-for-python-developers"></a>
+## Python開発者のための慣用的なRust
 
-> **What you'll learn:** Top 10 habits to build, common pitfalls with fixes, a structured 3-month learning path,
-> the complete Python→Rust "Rosetta Stone" reference table, and recommended learning resources.
+> **学習内容：** 身につけたい10の習慣、よくある落とし穴と解決策、体系的な3か月の学習計画、
+> PythonからRustへの対応をまとめた「ロゼッタストーン」一覧、おすすめの学習リソース。
 >
-> **Difficulty:** 🟡 Intermediate
+> **難易度：** 🟡 中級
 
 ```mermaid
 flowchart LR
-    A["🟢 Week 1-2<br/>Foundations<br/>'Why won't this compile?'"] --> B["🟡 Week 3-4<br/>Core Concepts<br/>'Oh, it's protecting me'"] 
-    B --> C["🟡 Month 2<br/>Intermediate<br/>'I see why this matters'"]
-    C --> D["🔴 Month 3+<br/>Advanced<br/>'Caught a bug at compile time!'"]
-    D --> E["🏆 Month 6<br/>Fluent<br/>'Better programmer everywhere'"]
+    A["🟢 1～2週目<br/>基礎<br/>「なぜコンパイルできない？」"] --> B["🟡 3～4週目<br/>主要な概念<br/>「なるほど、守ってくれているんだ」"]
+    B --> C["🟡 2か月目<br/>中級<br/>「大切な理由が分かってきた」"]
+    C --> D["🔴 3か月目以降<br/>上級<br/>「コンパイル時にバグを発見！」"]
+    D --> E["🏆 6か月目<br/>習熟<br/>「どの言語でもより良いプログラマーに」"]
     style A fill:#d4edda
     style B fill:#fff3cd
     style C fill:#fff3cd
@@ -18,202 +19,205 @@ flowchart LR
     style E fill:#c3e6cb,stroke:#28a745
 ```
 
-### Top 10 Habits to Build
+### 身につけたい10の習慣
 
-1. **Use `match` on enums instead of `if isinstance()`**
+1. **`if isinstance()`ではなくenumに対する`match`を使う**
    ```python
    # Python                              # Rust
    if isinstance(shape, Circle): ...     match shape { Shape::Circle(r) => ... }
    ```
 
-2. **Let the compiler guide you** — Read error messages carefully. Rust's
-   compiler is the best in any language. It tells you what's wrong AND how to fix it.
+2. **コンパイラを頼りにする** — エラーメッセージを注意深く読みましょう。Rustの
+   コンパイラは、どこが間違っているかだけでなく、修正方法も教えてくれます。
 
-3. **Prefer `&str` over `String` in function parameters** — Accept the most
-   general type. `&str` works with both `String` and string literals.
+3. **関数パラメーターでは`String`より`&str`を優先する** — より汎用的な型を受け取ります。
+   `&str`は`String`にも文字列リテラルにも使えます。
 
-4. **Use iterators instead of index loops** — Iterator chains are more idiomatic
-   and often faster than `for i in 0..vec.len()`.
+4. **インデックスループではなくイテレーターを使う** — イテレーターチェーンはより慣用的で、
+   多くの場合`for i in 0..vec.len()`より高速です。
 
-5. **Embrace `Option` and `Result`** — Don't `.unwrap()` everything. Use `?`,
-   `map`, `and_then`, `unwrap_or_else`.
+5. **`Option`と`Result`を活用する** — 何でも`.unwrap()`しないでください。`?`、
+   `map`、`and_then`、`unwrap_or_else`を使いましょう。
 
-6. **Derive traits liberally** — `#[derive(Debug, Clone, PartialEq)]` should be
-   on most structs. It's free and makes testing easier.
+6. **積極的にトレイトをderiveする** — 多くの構造体に`#[derive(Debug, Clone, PartialEq)]`を
+   付けましょう。追加コストはなく、テストも容易になります。
 
-7. **Use `cargo clippy` religiously** — It catches hundreds of style and correctness
-   issues. Treat it like `ruff` for Rust.
+7. **必ず`cargo clippy`を使う** — スタイルや正しさに関する多くの問題を検出します。
+   Rust版の`ruff`のように活用しましょう。
 
-8. **Don't fight the borrow checker** — If you're fighting it, you're probably
-   structuring data wrong. Refactor to make ownership clear.
+8. **借用チェッカーに逆らわない** — 手こずっているなら、データ構造の設計に問題があるかもしれません。
+   所有権が明確になるようにリファクタリングしましょう。
 
-9. **Use enums for state machines** — Instead of string flags or booleans, use
-   enums. The compiler ensures you handle every state.
+9. **状態機械にはenumを使う** — 文字列フラグや真偽値ではなくenumを使いましょう。
+   コンパイラがすべての状態を処理しているか確認してくれます。
 
-10. **Clone first, optimize later** — When learning, use `.clone()` freely to
-    avoid ownership complexity. Optimize only when profiling shows a need.
+10. **まずcloneし、最適化は後で行う** — 学習中は所有権の複雑さを避けるために`.clone()`を
+    気軽に使いましょう。プロファイリングで必要性が確認された場合にのみ最適化します。
 
-### Common Mistakes from Python Developers
+### Python開発者によくある間違い
 
-| Mistake | Why | Fix |
+| 間違い | 理由 | 修正方法 |
 |---------|-----|-----|
-| `.unwrap()` everywhere | Panics at runtime | Use `?` or `match` |
-| String instead of &str | Unnecessary allocation | Use `&str` for params |
-| `for i in 0..vec.len()` | Not idiomatic | `for item in &vec` |
-| Ignoring clippy warnings | Miss easy improvements | `cargo clippy` |
-| Too many `.clone()` calls | Performance overhead | Refactor ownership |
-| Giant main() function | Hard to test | Extract into lib.rs |
-| Not using `#[derive()]` | Re-inventing the wheel | Derive common traits |
-| Panicking on errors | Not recoverable | Return `Result<T, E>` |
+| どこでも`.unwrap()`を使う | 実行時にパニックする | `?`または`match`を使う |
+| &strではなくStringを使う | 不要なメモリ確保 | パラメーターには`&str`を使う |
+| `for i in 0..vec.len()` | 慣用的でない | `for item in &vec` |
+| clippyの警告を無視する | 簡単な改善を見逃す | `cargo clippy`を使う |
+| `.clone()`を多用する | 性能上のオーバーヘッド | 所有権の設計を見直す |
+| 巨大なmain()関数 | テストしにくい | lib.rsに切り出す |
+| `#[derive()]`を使わない | 既存機能を再実装してしまう | よく使うトレイトをderiveする |
+| エラーでパニックする | 復旧できない | `Result<T, E>`を返す |
 
 ***
 
-## Performance Comparison
+## 性能比較
 
-### Benchmark: Common Operations
+### ベンチマーク：一般的な処理
 ```text
-Operation              Python 3.12    Rust (release)    Speedup
+処理                   Python 3.12    Rust（release）    高速化率
 ─────────────────────  ────────────   ──────────────    ─────────
-Fibonacci(40)          ~25s           ~0.3s             ~80x
-Sort 10M integers      ~5.2s          ~0.6s             ~9x
-JSON parse 100MB       ~8.5s          ~0.4s             ~21x
-Regex 1M matches       ~3.1s          ~0.3s             ~10x
-HTTP server (req/s)    ~5,000         ~150,000          ~30x
-SHA-256 1GB file       ~12s           ~1.2s             ~10x
-CSV parse 1M rows      ~4.5s          ~0.2s             ~22x
-String concatenation   ~2.1s          ~0.05s            ~42x
+フィボナッチ(40)       ~25s           ~0.3s             ~80倍
+整数1000万個のソート   ~5.2s          ~0.6s             ~9倍
+JSON解析（100MB）      ~8.5s          ~0.4s             ~21倍
+正規表現（100万件）    ~3.1s          ~0.3s             ~10倍
+HTTPサーバー（req/s）  ~5,000         ~150,000          ~30倍
+SHA-256（1GBファイル） ~12s           ~1.2s             ~10倍
+CSV解析（100万行）     ~4.5s          ~0.2s             ~22倍
+文字列連結             ~2.1s          ~0.05s            ~42倍
 ```
 
-> **Note**: Python with C extensions (NumPy, etc.) dramatically narrows the gap
-> for numerical work. These benchmarks compare pure Python vs pure Rust.
+> **注：** C拡張機能（NumPyなど）を使ったPythonでは、数値処理における差は大幅に縮まります。
+> ここでのベンチマークは、純粋なPythonと純粋なRustを比較しています。
 
-### Memory Usage
+### メモリ使用量
 ```text
-Python:                                 Rust:
+Python：                                Rust：
 ─────────                               ─────
-- Object header: 28 bytes/object       - No object header
-- int: 28 bytes (even for 0)           - i32: 4 bytes, i64: 8 bytes
-- str "hello": 54 bytes                - &str "hello": 16 bytes (ptr + len)
-- list of 1000 ints: ~36 KB            - Vec<i32>: ~4 KB
-  (8 KB pointers + 28 KB int objects)
-- dict of 100 items: ~5.5 KB           - HashMap of 100: ~2.4 KB
+- オブジェクトヘッダー：1オブジェクトあたり28バイト - オブジェクトヘッダーなし
+- int：0でも28バイト                    - i32：4バイト、i64：8バイト
+- str "hello"：54バイト                - &str "hello"：16バイト（ポインター＋長さ）
+- intが1000個のlist：約36 KB            - Vec<i32>：約4 KB
+  （ポインター8 KB + intオブジェクト28 KB）
+- 要素100個のdict：約5.5 KB             - 要素100個のHashMap：約2.4 KB
 
-Total for typical application:
-- Python: 50-200 MB baseline           - Rust: 1-5 MB baseline
+一般的なアプリケーションの合計：
+- Python：ベースラインで50～200 MB       - Rust：ベースラインで1～5 MB
 ```
 
 ***
 
-## Common Pitfalls and Solutions
+<a id="common-pitfalls-and-solutions"></a>
+## よくある落とし穴と解決策
 
-### Pitfall 1: "The Borrow Checker Won't Let Me"
+### 落とし穴1：「借用チェッカーが許してくれない」
 ```rust
-// Problem: trying to iterate and modify
+// 問題：反復処理と変更を同時に行おうとしている
 let mut items = vec![1, 2, 3, 4, 5];
 // for item in &items {
-//     if *item > 3 { items.push(*item * 2); }  // ❌ Can't borrow mut while borrowed
+//     if *item > 3 { items.push(*item * 2); }  // ❌ 借用中に可変借用できない
 // }
 
-// Solution 1: collect changes, apply after
+// 解決策1：変更内容を集めてから適用する
 let additions: Vec<i32> = items.iter()
     .filter(|&&x| x > 3)
     .map(|&x| x * 2)
     .collect();
 items.extend(additions);
 
-// Solution 2: use retain/extend
+// 解決策2：retain/extendを使う
 items.retain(|&x| x <= 3);
 ```
 
-### Pitfall 2: "Too Many String Types"
+### 落とし穴2：「文字列型が多すぎる」
 ```rust
-// When in doubt:
-// - &str for function parameters
-// - String for struct fields and return values
-// - &str literals ("hello") work everywhere &str is expected
+// 迷ったとき：
+// - 関数パラメーターには&str
+// - 構造体のフィールドと戻り値にはString
+// - &strが必要な場所では、&strリテラル（"hello"）も使える
 
-fn process(input: &str) -> String {    // Accept &str, return String
+fn process(input: &str) -> String {    // &strを受け取り、Stringを返す
     format!("Processed: {}", input)
 }
 ```
 
-### Pitfall 3: "I Miss Python's Simplicity"
+### 落とし穴3：「Pythonの簡潔さが恋しい」
 ```rust
-// Python one-liner:
+// Pythonでの1行記述：
 // result = [x**2 for x in data if x > 0]
 
-// Rust equivalent:
+// Rustでの同等の記述：
 let result: Vec<i32> = data.iter()
     .filter(|&&x| x > 0)
     .map(|&x| x * x)
     .collect();
 
-// It's more verbose, but:
-// - Type-safe at compile time
-// - 10-100x faster
-// - No runtime type errors possible
-// - Explicit about memory allocation (.collect())
+// より冗長だが、次の利点がある：
+// - コンパイル時に型安全性を確保
+// - 10～100倍高速
+// - 実行時の型エラーが起きない
+// - メモリ確保（.collect()）が明示的
 ```
 
-### Pitfall 4: "Where's My REPL?"
+### 落とし穴4：「REPLはどこ？」
 ```rust
-// Rust has no REPL. Instead:
-// 1. Use `cargo test` as your REPL — write small tests to try things
-// 2. Use Rust Playground (play.rust-lang.org) for quick experiments
-// 3. Use `dbg!()` macro for quick debug output
-// 4. Use `cargo watch -x test` for auto-running tests on save
+// RustにはREPLがない。代わりに次の方法を使う：
+// 1. `cargo test`をREPLのように使い、小さなテストを書いて試す
+// 2. 手早い実験にはRust Playground（play.rust-lang.org）を使う
+// 3. 手軽なデバッグ出力には`dbg!()`マクロを使う
+// 4. 保存時にテストを自動実行するには`cargo watch -x test`を使う
 
 #[test]
 fn playground() {
-    // Use this as your "REPL" — run with `cargo test playground`
+    // これを「REPL」として使う — `cargo test playground`で実行
     let result = "hello world"
         .split_whitespace()
         .map(|w| w.to_uppercase())
         .collect::<Vec<_>>();
-    dbg!(&result);  // Prints: [src/main.rs:5] &result = ["HELLO", "WORLD"]
+    dbg!(&result);  // 出力例：[src/main.rs:5] &result = ["HELLO", "WORLD"]
 }
 ```
 
 ***
 
-## Learning Path and Resources
+<a id="learning-path-and-resources"></a>
+## 学習計画とリソース
 
-### Week 1-2: Foundations
-- [ ] Install Rust, set up VS Code with rust-analyzer
-- [ ] Complete chapters 1-4 of this guide (types, control flow)
-- [ ] Write 5 small programs converting Python scripts to Rust
-- [ ] Get comfortable with `cargo build`, `cargo test`, `cargo clippy`
+### 1～2週目：基礎
+- [ ] Rustをインストールし、VS Codeにrust-analyzerを設定する
+- [ ] 本ガイドの第1～4章（型、制御フロー）を完了する
+- [ ] PythonスクリプトをRustに書き換えた小さなプログラムを5つ作る
+- [ ] `cargo build`、`cargo test`、`cargo clippy`に慣れる
 
-### Week 3-4: Core Concepts
-- [ ] Complete chapters 5-8 (structs, enums, ownership, modules)
-- [ ] Rewrite a Python data processing script in Rust
-- [ ] Practice with `Option<T>` and `Result<T, E>` until natural
-- [ ] Read compiler error messages carefully — they're teaching you
+### 3～4週目：主要な概念
+- [ ] 第5～8章（構造体、enum、所有権、モジュール）を完了する
+- [ ] Pythonのデータ処理スクリプトをRustに書き換える
+- [ ] `Option<T>`と`Result<T, E>`を自然に使えるまで練習する
+- [ ] コンパイラのエラーメッセージを注意深く読む — 学びの助けになります
 
-### Month 2: Intermediate
-- [ ] Complete chapters 9-12 (error handling, traits, iterators)
-- [ ] Build a CLI tool with `clap` and `serde`
-- [ ] Write a PyO3 extension for a Python project hotspot
-- [ ] Practice iterator chains until they feel like comprehensions
+### 2か月目：中級
+- [ ] 第9～12章（エラー処理、トレイト、イテレーター）を完了する
+- [ ] `clap`と`serde`を使ってCLIツールを作る
+- [ ] Pythonプロジェクトのボトルネックを置き換えるPyO3拡張機能を作る
+- [ ] イテレーターチェーンを内包表記のように自然に感じるまで練習する
 
-### Month 3: Advanced
-- [ ] Complete chapters 13-16 (concurrency, unsafe, testing)
-- [ ] Build a web service with `axum` and `tokio`
-- [ ] Contribute to an open-source Rust project
-- [ ] Read "Programming Rust" (O'Reilly) for deeper understanding
+### 3か月目：上級
+- [ ] 第13～16章（並行処理、unsafe、テスト）を完了する
+- [ ] `axum`と`tokio`でWebサービスを作る
+- [ ] オープンソースのRustプロジェクトに貢献する
+- [ ] 理解を深めるために『Programming Rust』（O'Reilly）を読む
 
-### Recommended Resources
-- **The Rust Book**: https://doc.rust-lang.org/book/ (official, excellent)
-- **Rust by Example**: https://doc.rust-lang.org/rust-by-example/ (learn by doing)
-- **Rustlings**: https://github.com/rust-lang/rustlings (exercises)
-- **Rust Playground**: https://play.rust-lang.org/ (online compiler)
-- **This Week in Rust**: https://this-week-in-rust.org/ (newsletter)
-- **PyO3 Guide**: https://pyo3.rs/ (Python ↔ Rust bridge)
-- **Comprehensive Rust** (Google): https://google.github.io/comprehensive-rust/
+### おすすめのリソース
+- **The Rust Book**: https://doc.rust-lang.org/book/ （公式の優れたガイド）
+- **Rust by Example**: https://doc.rust-lang.org/rust-by-example/ （実践しながら学ぶ）
+- **Rustlings**: https://github.com/rust-lang/rustlings （演習）
+- **Rust Playground**: https://play.rust-lang.org/ （オンラインコンパイラ）
+- **This Week in Rust**: https://this-week-in-rust.org/ （ニュースレター）
+- **PyO3 Guide**: https://pyo3.rs/ （PythonとRustの橋渡し）
+- **Comprehensive Rust**（Google）: https://google.github.io/comprehensive-rust/
 
-### Python → Rust Rosetta Stone
+<a id="rosetta-stone-python-to-rust"></a>
+### PythonからRustへの対応表（ロゼッタストーン）
 
-| Python | Rust | Chapter |
+| Python | Rust | 章 |
 |--------|------|---------|
 | `list` | `Vec<T>` | 5 |
 | `dict` | `HashMap<K,V>` | 5 |
@@ -225,12 +229,12 @@ fn playground() {
 | `None` | `Option<T>` | 6 |
 | `raise`/`try`/`except` | `Result<T,E>` + `?` | 9 |
 | `Protocol` (PEP 544) | `trait` | 10 |
-| `TypeVar` | Generics `<T>` | 10 |
-| `__dunder__` methods | Traits (Display, Add, etc.) | 10 |
+| `TypeVar` | ジェネリクス`<T>` | 10 |
+| `__dunder__`メソッド | トレイト（Display、Addなど） | 10 |
 | `lambda` | `\|args\| body` | 12 |
-| generator `yield` | `impl Iterator` | 12 |
-| list comprehension | `.map().filter().collect()` | 12 |
-| `@decorator` | Higher-order fn or macro | 12a, 15 |
+| ジェネレーターの`yield` | `impl Iterator` | 12 |
+| リスト内包表記 | `.map().filter().collect()` | 12 |
+| `@decorator` | 高階関数またはマクロ | 12a, 15 |
 | `asyncio` | `tokio` | 13 |
 | `threading` | `std::thread` | 13 |
 | `multiprocessing` | `rayon` | 13 |
@@ -239,48 +243,48 @@ fn playground() {
 | `pip install` | `cargo add` | 8 |
 | `requirements.txt` | `Cargo.lock` | 8 |
 | `pyproject.toml` | `Cargo.toml` | 8 |
-| `with` (context mgr) | Scope-based `Drop` | 15 |
+| `with`（コンテキストマネージャー） | スコープベースの`Drop` | 15 |
 | `json.dumps/loads` | `serde_json` | 15 |
 
 ***
 
-## Final Thoughts for Python Developers
+## Python開発者への最後のメッセージ
 
 ```rust
-What you'll miss from Python:
-- REPL and interactive exploration
-- Rapid prototyping speed
-- Rich ML/AI ecosystem (PyTorch, etc.)
-- "Just works" dynamic typing
-- pip install and immediate use
+Pythonを離れて惜しく感じるもの：
+- REPLと対話的な試行錯誤
+- 高速なプロトタイピング
+- 豊富なML/AIエコシステム（PyTorchなど）
+- 「そのまま動く」動的型付け
+- pip installですぐに使える手軽さ
 
-What you'll gain from Rust:
-- "If it compiles, it works" confidence
-- 10-100x performance improvement
-- No more runtime type errors
-- No more None/null crashes
-- True parallelism (no GIL!)
-- Single binary deployment
-- Predictable memory usage
-- The best compiler error messages in any language
+Rustで得られるもの：
+- 「コンパイルできれば動く」という安心感
+- 10～100倍の性能向上
+- 実行時の型エラーがなくなる
+- None/nullによるクラッシュがなくなる
+- 真の並列処理（GILなし！）
+- 単一バイナリでのデプロイ
+- 予測可能なメモリ使用量
+- どの言語よりも優れたコンパイラのエラーメッセージ
 
-The journey:
-Week 1:   "Why does the compiler hate me?"
-Week 2:   "Oh, it's actually protecting me from bugs"
-Month 1:  "I see why this matters"
-Month 2:  "I caught a bug at compile time that would've been a production incident"
-Month 3:  "I don't want to go back to untyped code"
-Month 6:  "Rust has made me a better programmer in every language"
+学習の道のり：
+1週目：「なぜコンパイラは私を嫌うのだろう？」
+2週目：「なるほど、バグから守ってくれているんだ」
+1か月目：「なぜこれが大切なのか分かってきた」
+2か月目：「本番障害になっていたバグをコンパイル時に見つけた」
+3か月目：「型のないコードには戻りたくない」
+6か月目：「Rustのおかげで、どの言語でもより良いプログラマーになれた」
 ```
 
 ---
 
-## Exercises
+## 演習
 
 <details>
-<summary><strong>🏋️ Exercise: Code Review Checklist</strong> (click to expand)</summary>
+<summary><strong>🏋️ 演習：コードレビューのチェックリスト</strong>（クリックして展開）</summary>
 
-**Challenge**: Review this Rust code (written by a Python developer) and identify 5 idiomatic improvements:
+**課題：** Python開発者が書いた次のRustコードをレビューし、慣用的な書き方に改善できる点を5つ挙げてください。
 
 ```rust
 fn get_name(names: Vec<String>, index: i32) -> String {
@@ -300,16 +304,16 @@ fn main() {
 ```
 
 <details>
-<summary>🔑 Solution</summary>
+<summary>🔑 解答</summary>
 
-Five improvements:
+改善点は次の5つです。
 
 ```rust
-// 1. Take &[String] not Vec<String> (don't take ownership of the whole vec)
-// 2. Use usize for index (not i32 — indices are always non-negative)
-// 3. Return Option<&str> instead of empty string (use the type system!)
-// 4. Use .get() instead of bounds-checking manually
-// 5. Don't clone() in main — pass a reference
+// 1. Vec<String>ではなく&[String]を受け取る（Vec全体の所有権を取らない）
+// 2. インデックスにはi32ではなくusizeを使う（インデックスは常に非負）
+// 3. 空文字列ではなくOption<&str>を返す（型システムを活用する！）
+// 4. 範囲を手動で確認せず、.get()を使う
+// 5. mainでclone()せず、参照を渡す
 
 fn get_name(names: &[String], index: usize) -> Option<&str> {
     names.get(index).map(|s| s.as_str())
@@ -324,11 +328,11 @@ fn main() {
 }
 ```
 
-**Key takeaway**: Python habits that hurt in Rust: cloning everything (use borrows), using sentinel values like `""` (use `Option`), taking ownership when borrowing suffices, and using signed integers for indices.
+**要点：** Rustでは、何でもcloneする（借用を使う）、`""`のような番兵値を使う（`Option`を使う）、借用で十分な場面で所有権を取る、インデックスに符号付き整数を使う、といったPythonの習慣が問題になります。
 
 </details>
 </details>
 
 ***
 
-*End of Rust for Python Programmers Training Guide*
+*『PythonプログラマーのためのRustトレーニングガイド』終わり*
